@@ -40,13 +40,14 @@ function procesarDecisiones(
     if (!dec) continue
 
     // Validar restricciones
-    const efectivoDisponible = equipo.efectivo
-    const costoProduccion = (dec.produccion / 100) * 85000 * 10
-    const costoLaboral = dec.empleados * PARAMETROS_MERCADO.costoLaboral
-    const costoTotal = costoProduccion + dec.marketing + dec.id + dec.capacitacion + costoLaboral
+    const efectivoDisponible = Number(equipo.efectivo) || 0
+    const costoProduccion = (Number(dec.produccion) / 100) * 85000 * 10
+    const costoLaboral = Number(dec.empleados) * PARAMETROS_MERCADO.costoLaboral
+    const costoTotal = costoProduccion + Number(dec.marketing) + Number(dec.id_inversion) + Number(dec.capacitacion) + costoLaboral
 
-    let produccionAjustada = (dec.produccion / 100) * 85000
+    let produccionAjustada = (Number(dec.produccion) / 100) * 85000
     if (costoTotal > efectivoDisponible * 1.5) {
+
       produccionAjustada *= (efectivoDisponible / costoTotal)
     }
 
@@ -54,7 +55,7 @@ function procesarDecisiones(
     ofertaTotal += produccion
 
     // Calcular demanda base con marketing
-    const multiplicadorMarketing = 1 + (dec.marketing / 10000) * 0.2
+    const multiplicadorMarketing = 1 + (Number(dec.marketing) / 10000) * 0.2
     const demandaEquipo = (PARAMETROS_MERCADO.demandaBase / equipos.length) * multiplicadorMarketing * 0.8 // 80% inercia
 
     datosEquipos.set(equipo.id, {
