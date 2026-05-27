@@ -47,7 +47,6 @@ function procesarDecisiones(
 
     let produccionAjustada = (Number(dec.produccion) / 100) * 85000
     if (costoTotal > efectivoDisponible * 1.5) {
-
       produccionAjustada *= (efectivoDisponible / costoTotal)
     }
 
@@ -63,8 +62,8 @@ function procesarDecisiones(
       demandaEquipo,
       costos: costoTotal,
       decision: dec,
-      efectivoAnterior: equipo.efectivo,
-      inventarioAnterior: equipo.inventario || 0,
+      efectivoAnterior: Number(equipo.efectivo) || 0,
+      inventarioAnterior: Number(equipo.inventario) || 0,
     })
   }
 
