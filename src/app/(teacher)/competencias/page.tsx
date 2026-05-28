@@ -235,9 +235,6 @@ export default function CompetenciasPage() {
     }
   }
 
-  console.log('User:', user)
-  console.log('Rol:', user?.rol)
-
   if (loading || loadingCompetencias) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center">
@@ -246,9 +243,13 @@ export default function CompetenciasPage() {
     )
   }
 
-  if (!user || user.rol !== 'teacher') {
-    console.log('Redirigiendo a dashboard porque no es teacher')
-    router.push('/dashboard')
+  if (!user) {
+    router.replace('/login')
+    return null
+  }
+
+  if (user.rol !== 'teacher' && user.rol !== 'admin') {
+    router.replace('/dashboard')
     return null
   }
 

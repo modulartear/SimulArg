@@ -57,7 +57,12 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    router.push('/login')
+    router.replace('/login')
+    return null
+  }
+
+  if (user.rol === 'teacher' || user.rol === 'admin') {
+    router.replace('/competencias')
     return null
   }
 

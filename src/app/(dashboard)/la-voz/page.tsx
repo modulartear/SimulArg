@@ -37,7 +37,12 @@ export default function LaVozPage() {
 
   if (loading || equipoLoading) return <div className="text-white text-center pt-20">Cargando...</div>
   if (!user) {
-    router.push('/login')
+    router.replace('/login')
+    return null
+  }
+
+  if (user.rol === 'teacher' || user.rol === 'admin') {
+    router.replace('/competencias')
     return null
   }
 
