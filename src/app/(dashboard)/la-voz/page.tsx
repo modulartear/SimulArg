@@ -35,7 +35,7 @@ export default function LaVozPage() {
     loadLaVoz()
   }, [selectedPeriodo, equipo])
 
-  if (loading || equipoLoading) return <div className="text-white text-center pt-20">Cargando...</div>
+  if (loading || equipoLoading) return <div className="min-h-screen app-bg text-white/90 text-center pt-20 font-semibold">Cargando...</div>
   if (!user) {
     router.replace('/login')
     return null
@@ -48,34 +48,34 @@ export default function LaVozPage() {
 
   if (!equipo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 shadow-xl text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No hay equipo asignado</h2>
-          <p className="text-gray-600">Tu profesor aún no te ha asignado a un equipo.</p>
+      <div className="min-h-screen app-bg p-4 flex items-center justify-center">
+        <div className="app-surface p-8 text-center max-w-xl w-full">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-3">No hay equipo asignado</h2>
+          <p className="text-slate-600">Tu profesor aún no te ha asignado a un equipo.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+    <div className="min-h-screen app-bg p-4">
       <div className="max-w-4xl mx-auto">
-        <Link href="/dashboard" className="text-purple-200 hover:text-white mb-6 inline-block">
+        <Link href="/dashboard" className="btn-outline text-white px-4 py-2 rounded-xl transition-smooth hover:bg-white/20 mb-6 inline-block">
           ← Volver al Dashboard
         </Link>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="app-surface p-8">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">📰 LA VOZ - Análisis del Mercado</h1>
-            <p className="text-gray-600">Análisis automático de la situación económica</p>
+            <h1 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">📰 LA VOZ - Análisis del Mercado</h1>
+            <p className="text-slate-600">Análisis automático de la situación económica</p>
           </div>
 
           <div className="mb-6 flex items-center gap-4">
-            <label className="text-gray-700 font-medium">Período:</label>
+            <label className="text-slate-700 font-semibold">Período:</label>
             <select
               value={selectedPeriodo}
               onChange={(e) => setSelectedPeriodo(parseInt(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
                 <option key={p} value={p}>
@@ -86,7 +86,7 @@ export default function LaVozPage() {
           </div>
 
           {loadingLaVoz ? (
-            <p className="text-gray-600 text-center py-8">Cargando análisis...</p>
+            <p className="text-slate-600 text-center py-8">Cargando análisis...</p>
           ) : laVoz ? (
             <div className="space-y-8">
               {/* Análisis Económico */}

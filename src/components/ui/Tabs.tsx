@@ -14,15 +14,15 @@ export default function Tabs({ tabs, defaultTab = 0 }: TabsProps) {
 
   return (
     <div className="w-full">
-      <div className="flex border-b border-gray-200 gap-2 overflow-x-auto">
+      <div className="app-surface app-surface-muted flex gap-2 p-2 overflow-x-auto">
         {tabs.map((tab, idx) => (
           <button
             key={idx}
             onClick={() => setActive(idx)}
-            className={`px-4 py-3 font-medium whitespace-nowrap transition-colors ${
+            className={`px-4 py-2.5 rounded-xl font-semibold whitespace-nowrap transition ${
               active === idx
-                ? 'border-b-2 border-purple-600 text-purple-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'btn-main text-white shadow-md'
+                : 'text-slate-700 hover:bg-white/60'
             }`}
           >
             {tab.icon && <span className="mr-2">{tab.icon}</span>}

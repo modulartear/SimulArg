@@ -38,19 +38,19 @@ export default function Dashboard() {
 
   if (loading || equipoLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+      <div className="min-h-screen app-bg p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-end mb-8 pt-4">
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+              className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
             >
               Cerrar Sesión
             </button>
           </div>
         </div>
         <div className="flex items-center justify-center">
-          <div className="text-white text-2xl">Cargando...</div>
+          <div className="text-white/90 text-2xl font-semibold">Cargando...</div>
         </div>
       </div>
     )
@@ -68,21 +68,21 @@ export default function Dashboard() {
 
   if (!equipo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+      <div className="min-h-screen app-bg p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-end mb-8 pt-4">
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+              className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
             >
               Cerrar Sesión
             </button>
           </div>
         </div>
         <div className="flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 shadow-xl text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">No hay equipo asignado</h2>
-            <p className="text-gray-600">
+          <div className="app-surface p-8 text-center max-w-xl w-full">
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">No hay equipo asignado</h2>
+            <p className="text-slate-600">
               Tu profesor aún no te ha asignado a un equipo. Por favor, contacta a tu profesor.
             </p>
           </div>
@@ -111,17 +111,17 @@ export default function Dashboard() {
       : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+    <div className="min-h-screen app-bg p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 pt-4">
           <div>
-            <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-            <p className="text-purple-100 mt-1">Equipo: {equipo.nombre}</p>
+            <h1 className="text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
+            <p className="text-white/70 mt-1">Equipo: {equipo.nombre}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+            className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
           >
             Cerrar Sesión
           </button>
@@ -164,8 +164,8 @@ export default function Dashboard() {
         </div>
 
         {/* Gráfico */}
-        <div className="bg-white rounded-lg p-6 shadow-lg mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Evolución de Ingresos vs Costos</h2>
+        <div className="app-surface p-6 mb-8">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-4">Evolución de Ingresos vs Costos</h2>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
@@ -178,7 +178,7 @@ export default function Dashboard() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-80 flex items-center justify-center text-gray-500">
+            <div className="h-80 flex items-center justify-center text-slate-500">
               <p>No hay datos de períodos para mostrar. Cuando tu profesor procese el primer período verás los datos aquí.</p>
             </div>
           )}
@@ -212,13 +212,11 @@ export default function Dashboard() {
               description: 'Análisis del mercado',
             },
           ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`bg-gradient-to-r ${item.color} text-white rounded-lg p-6 shadow-lg hover:shadow-xl transition transform hover:scale-105`}
-            >
-              <h2 className="text-2xl font-bold mb-2">{item.title}</h2>
-              <p className="text-blue-100">{item.description}</p>
+            <Link key={item.href} href={item.href} className="group app-surface p-6">
+              <div className={`rounded-2xl p-5 bg-gradient-to-r ${item.color} text-white shadow-lg transition-smooth group-hover:shadow-xl`}>
+                <h2 className="text-2xl font-extrabold mb-2">{item.title}</h2>
+                <p className="text-white/80">{item.description}</p>
+              </div>
             </Link>
           ))}
         </div>

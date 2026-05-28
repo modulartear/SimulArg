@@ -395,26 +395,26 @@ export default function DecisionesPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+    <div className="min-h-screen app-bg p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 pt-4">
-          <Link href="/dashboard" className="text-purple-200 hover:text-white">
+          <Link href="/dashboard" className="btn-outline text-white px-4 py-2 rounded-xl transition-smooth hover:bg-white/20">
             ← Volver al Dashboard
           </Link>
           <button
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+            className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
           >
             Cerrar Sesión
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="app-surface p-8">
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">
             📊 Decisiones - Período {equipo.periodo_actual}/8
           </h1>
-          <p className="text-gray-600 mb-6">Equipo: {equipo.nombre}</p>
+          <p className="text-slate-600 mb-6">Equipo: {equipo.nombre}</p>
 
           {message && (
             <div
@@ -429,28 +429,28 @@ export default function DecisionesPage() {
           <Tabs tabs={tabs} defaultTab={0} />
 
           {/* Preview de Impacto */}
-          <div className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-2 border-purple-200">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">📈 Vista Previa de Impacto</h3>
+          <div className="mt-8 app-surface app-surface-muted p-6 ring-1 ring-black/5">
+            <h3 className="text-lg font-extrabold text-slate-900 mb-4">📈 Vista Previa de Impacto</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-600">Costo Total</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(costoTotal)}</p>
+                <p className="text-sm text-slate-600">Costo Total</p>
+                <p className="text-2xl font-extrabold text-slate-900">{formatCurrency(costoTotal)}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Ingresos Estimados</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(ingresoEstimado)}</p>
+                <p className="text-sm text-slate-600">Ingresos Estimados</p>
+                <p className="text-2xl font-extrabold text-emerald-600">{formatCurrency(ingresoEstimado)}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Ganancia Estimada</p>
-                <p className={`text-2xl font-bold ${gananciEstimada > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-sm text-slate-600">Ganancia Estimada</p>
+                <p className={`text-2xl font-extrabold ${gananciEstimada > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {formatCurrency(gananciEstimada)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Riesgo</p>
+                <p className="text-sm text-slate-600">Riesgo</p>
                 <p
-                  className={`text-2xl font-bold ${
-                    gananciEstimada > 50000 ? 'text-green-600' : 'text-yellow-600'
+                  className={`text-2xl font-extrabold ${
+                    gananciEstimada > 50000 ? 'text-emerald-600' : 'text-amber-600'
                   }`}
                 >
                   {gananciEstimada > 50000 ? 'BAJO' : 'MODERADO'}
@@ -464,14 +464,14 @@ export default function DecisionesPage() {
             <button
               onClick={handleSaveDraft}
               disabled={saving}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition"
+              className="flex-1 btn-outline text-white font-extrabold py-3 rounded-xl transition-smooth hover:bg-white/20 disabled:opacity-50"
             >
               {saving ? 'Guardando...' : '💾 Guardar Borrador'}
             </button>
             <button
               onClick={handleSubmit}
               disabled={saving || !isValid}
-              className={`flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition`}
+              className="flex-1 btn-main hover:opacity-90 disabled:opacity-50 text-white font-extrabold py-3 rounded-xl transition-smooth"
             >
               {saving ? 'Enviando...' : '✓ Enviar Decisión'}
             </button>

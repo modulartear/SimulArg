@@ -9,11 +9,18 @@ interface KPICardProps {
   color?: 'primary' | 'success' | 'warning' | 'danger'
 }
 
-const colorClasses = {
-  primary: 'border-purple-500 bg-purple-50',
-  success: 'border-green-500 bg-green-50',
-  warning: 'border-yellow-500 bg-yellow-50',
-  danger: 'border-red-500 bg-red-50',
+const bgGradients = {
+  primary: 'from-indigo-500/18 via-fuchsia-500/10 to-transparent',
+  success: 'from-emerald-500/18 via-teal-500/10 to-transparent',
+  warning: 'from-amber-500/20 via-orange-500/10 to-transparent',
+  danger: 'from-rose-500/20 via-pink-500/10 to-transparent',
+}
+
+const ringColors = {
+  primary: 'ring-indigo-500/20',
+  success: 'ring-emerald-500/20',
+  warning: 'ring-amber-500/25',
+  danger: 'ring-rose-500/25',
 }
 
 const trendColors = {
@@ -31,18 +38,26 @@ export default function KPICard({
   color = 'primary',
 }: KPICardProps) {
   return (
-    <div className={`border-l-4 rounded-lg p-6 shadow-md ${colorClasses[color]} transition-transform hover:scale-105`}>
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+    <div
+      className={`app-surface relative overflow-hidden p-6 ring-1 transition-transform hover:-translate-y-0.5 ${ringColors[color]}`}
+    >
+      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${bgGradients[color]}`} />
+      <div className={`pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-gradient-to-br ${bgGradients[color]} blur-2xl`} />
+      <div className="relative flex justify-between items-start gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-600 truncate">{title}</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2 tracking-tight">{value}</p>
           {change !== undefined && (
-            <p className={`text-sm mt-2 ${trendColors[trend]}`}>
+            <p className={`text-sm mt-2 font-semibold ${trendColors[trend]}`}>
               {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'} {Math.abs(change)}%
             </p>
           )}
         </div>
-        {icon && <div className="text-2xl">{icon}</div>}
+        {icon && (
+          <div className="shrink-0 rounded-xl bg-white/70 ring-1 ring-black/5 px-3 py-2 text-2xl">
+            {icon}
+          </div>
+        )}
       </div>
     </div>
   )

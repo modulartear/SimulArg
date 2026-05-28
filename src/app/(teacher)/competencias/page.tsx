@@ -251,8 +251,8 @@ export default function CompetenciasPage() {
 
   if (loading || loadingCompetencias) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Cargando...</div>
+      <div className="min-h-screen app-bg flex items-center justify-center">
+        <div className="text-white/90 text-2xl font-semibold">Cargando...</div>
       </div>
     )
   }
@@ -342,17 +342,17 @@ export default function CompetenciasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-900 p-4">
+    <div className="min-h-screen app-bg p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 pt-4">
           <div>
-            <h1 className="text-4xl font-bold text-white">Panel del Profesor</h1>
-            <p className="text-blue-100 mt-1">Bienvenido, {user.email}</p>
+            <h1 className="text-4xl font-extrabold text-white tracking-tight">Panel del Profesor</h1>
+            <p className="text-white/70 mt-1">Bienvenido, {user.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+            className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
           >
             Salir
           </button>
@@ -371,7 +371,7 @@ export default function CompetenciasPage() {
         {/* Competencias */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Lista de competencias */}
-          <div className="lg:col-span-1 bg-white rounded-lg shadow-xl p-6">
+          <div className="lg:col-span-1 app-surface p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Mis Competencias</h2>
               {!showCreateForm && competencias.length > 0 && (
@@ -499,7 +499,7 @@ export default function CompetenciasPage() {
               <>
                 {/* Detalles de la competencia */}
                 {competencias.find((c) => c.id === selectedCompetencia) && (
-                  <div className="bg-white rounded-lg shadow-xl p-6">
+                  <div className="app-surface p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-2xl font-bold text-gray-900">
@@ -557,7 +557,7 @@ export default function CompetenciasPage() {
                 )}
 
                 {/* Equipos */}
-                <div className="bg-white rounded-lg shadow-xl p-6">
+                <div className="app-surface p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-900">Equipos ({equipos.length})</h3>
                     {!showCreateTeamForm && (
@@ -670,7 +670,7 @@ export default function CompetenciasPage() {
                 </div>
               </>
             ) : (
-              <div className="bg-white rounded-lg shadow-xl p-12 text-center">
+              <div className="app-surface p-12 text-center">
                 <p className="text-gray-600 text-lg">Selecciona una competencia para ver detalles</p>
               </div>
             )}
@@ -681,7 +681,7 @@ export default function CompetenciasPage() {
       {/* Modal para agregar miembros */}
       {showAddMemberModal && selectedTeamForMembers && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+          <div className="app-surface p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-900">Agregar Miembro</h3>
               <button
