@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
@@ -13,12 +13,15 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading, rol } = useAuth()
 
-  // Si ya está logueado, redirige al dashboard
-  if (user) {
-    router.push('/dashboard')
-  }
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) return
+
+    const target = rol === 'teacher' || rol === 'admin' ? '/competencias' : '/dashboard'
+    router.replace(target)
+  }, [authLoading, rol, router, user])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +30,6 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Error al ingresar')
     } finally {
