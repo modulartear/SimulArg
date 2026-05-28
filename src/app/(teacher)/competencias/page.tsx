@@ -6,7 +6,15 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { getCompetencias, getEquiposCompetencia, crearCompetencia, crearEquipo, getUsuarios, actualizarEquipo } from '@/lib/db'
+import {
+  getCompetencias,
+  getEquiposCompetencia,
+  crearCompetencia,
+  crearEquipo,
+  getUsuarios,
+  actualizarEquipo,
+  actualizarCompetencia,
+} from '@/lib/db'
 import { useFormatCurrency } from '@/lib/hooks'
 import type { Usuario } from '@/types'
 import type { Competencia, Equipo } from '@/types'
@@ -22,6 +30,7 @@ export default function CompetenciasPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([])
   const [loadingEquipos, setLoadingEquipos] = useState(false)
   const [processingPeriodo, setProcessingPeriodo] = useState(false)
+  const [startingCompetencia, setStartingCompetencia] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createFormData, setCreateFormData] = useState({
@@ -263,6 +272,29 @@ export default function CompetenciasPage() {
     router.push('/login')
   }
 
+  const handleStartCompetencia = async () => {
+    if (!selectedCompetencia) return
+    if (equipos.length === 0) {
+      setMessage({ type: 'error', text: 'Crea al menos 1 equipo antes de iniciar la competencia' })
+      setTimeout(() => setMessage(null), 5000)
+      return
+    }
+
+    setStartingCompetencia(true)
+    try {
+      await actualizarCompetencia(selectedCompetencia, { estado: 'en_curso', periodo_actual: 1 })
+      const updated = await getCompetencias(user.uid)
+      setCompetencias(updated)
+      setMessage({ type: 'success', text: 'Competencia iniciada. Ya puedes procesar el período 1.' })
+      setTimeout(() => setMessage(null), 5000)
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Error al iniciar la competencia' })
+      setTimeout(() => setMessage(null), 5000)
+    } finally {
+      setStartingCompetencia(false)
+    }
+  }
+
   const handleProcessPeriodo = async () => {
     if (!selectedCompetencia) {
       setMessage({ type: 'error', text: 'Selecciona una competencia primero' })
@@ -501,6 +533,16 @@ export default function CompetenciasPage() {
                         <p className="text-2xl font-bold text-purple-600">{equipos.length}</p>
                       </div>
                     </div>
+
+                    {competencias.find((c) => c.id === selectedCompetencia)?.estado === 'preparacion' && (
+                      <button
+                        onClick={handleStartCompetencia}
+                        disabled={startingCompetencia}
+                        className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition"
+                      >
+                        {startingCompetencia ? '⏳ Iniciando...' : '🚀 Iniciar Competencia'}
+                      </button>
+                    )}
 
                     {competencias.find((c) => c.id === selectedCompetencia)?.estado === 'en_curso' && (
                       <button

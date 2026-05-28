@@ -11,7 +11,7 @@ import {
 } from '@/lib/db'
 import type { Competencia, ResultadoPeriodo } from '@/types'
 import { db } from '@/lib/firebase'
-import { getDoc, doc } from 'firebase/firestore'
+import { getDoc, doc, updateDoc } from 'firebase/firestore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -151,6 +151,20 @@ export async function POST(request: NextRequest) {
 
       await guardarReporte(reporteData)
     }
+
+    const nextPeriodo = periodo + 1
+    const competenciaUpdates: Partial<Competencia> = {}
+    if (nextPeriodo > competencia.total_periodos) {
+      competenciaUpdates.estado = 'finalizada'
+      competenciaUpdates.periodo_actual = competencia.total_periodos
+    } else {
+      competenciaUpdates.estado = 'en_curso'
+      competenciaUpdates.periodo_actual = nextPeriodo
+    }
+    await updateDoc(doc(db, 'competencias', competenciaId), {
+      ...competenciaUpdates,
+      updatedAt: new Date(),
+    })
 
     return NextResponse.json({
       success: true,

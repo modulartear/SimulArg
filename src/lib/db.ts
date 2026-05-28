@@ -106,6 +106,18 @@ export async function getCompetencia(id: string): Promise<Competencia | null> {
   }
 }
 
+export async function actualizarCompetencia(competenciaId: string, updates: Partial<Competencia>) {
+  try {
+    await updateDoc(doc(db, 'competencias', competenciaId), {
+      ...updates,
+      updatedAt: new Date(),
+    })
+  } catch (error) {
+    console.error('Error actualizando competencia:', error)
+    throw error
+  }
+}
+
 // ============================================
 // EQUIPOS
 // ============================================
