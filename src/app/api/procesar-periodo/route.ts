@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { simularPeriodo, generarLaVoz } from '@/lib/simulation'
-import {
-  getDecisionesPeriodo,
-  getEquiposCompetencia,
-  guardarResultado,
-  guardarReporte,
-  guardarLaVoz,
-  getResultadoEquipoPeriodo,
-  actualizarEquipo,
-} from '@/lib/db'
-import type { Competencia, ResultadoPeriodo } from '@/types'
-import { db } from '@/lib/firebase'
-import { getDoc, doc, updateDoc } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebaseAdmin'
+import type { Competencia, Decision, Equipo, ResultadoPeriodo } from '@/types'
+
+export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    const adminDb = getAdminDb()
     const { competenciaId, periodo } = await request.json()
 
     if (!competenciaId || !periodo) {
@@ -25,8 +18,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener competencia
-    const competenciaSnap = await getDoc(doc(db, 'competencias', competenciaId))
-    if (!competenciaSnap.exists()) {
+    const competenciaSnap = await adminDb.collection('competencias').doc(competenciaId).get()
+    if (!competenciaSnap.exists) {
       return NextResponse.json(
         { error: 'Competencia no encontrada' },
         { status: 404 }
@@ -35,7 +28,11 @@ export async function POST(request: NextRequest) {
     const competencia = competenciaSnap.data() as Competencia
 
     // Obtener equipos
-    const equipos = await getEquiposCompetencia(competenciaId)
+    const equiposSnap = await adminDb
+      .collection('equipos')
+      .where('competencia_id', '==', competenciaId)
+      .get()
+    const equipos = equiposSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Equipo, 'id'>) })) as Equipo[]
     if (equipos.length === 0) {
       return NextResponse.json(
         { error: 'No hay equipos en esta competencia' },
@@ -44,7 +41,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener decisiones
-    const decisiones = await getDecisionesPeriodo(competenciaId, periodo)
+    const decisionesSnap = await adminDb
+      .collection('decisiones')
+      .where('competencia_id', '==', competenciaId)
+      .where('periodo', '==', periodo)
+      .get()
+    const decisiones = decisionesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Decision, 'id'>) })) as Decision[]
     if (decisiones.length === 0) {
       return NextResponse.json(
         { error: 'No hay decisiones para procesar' },
@@ -59,17 +61,22 @@ export async function POST(request: NextRequest) {
     const resultadosGuardados: ResultadoPeriodo[] = []
     for (const [equipoId, resultado] of resultados) {
       resultado.competencia_id = competenciaId
-      const resultadoId = await guardarResultado(resultado)
+      const resultadoRef = await adminDb.collection('resultados_periodo').add({
+        ...resultado,
+        timestamp: new Date(),
+      })
+      const resultadoId = resultadoRef.id
       resultadosGuardados.push({ ...resultado, id: resultadoId })
 
       // Actualizar datos del equipo
-      await actualizarEquipo(equipoId, {
+      await adminDb.collection('equipos').doc(equipoId).update({
         efectivo: resultado.efectivo,
         inventario: resultado.inventario,
         deuda: resultado.indice_deuda,
         ganancia_acumulada: resultado.ganancia_acumulada,
         estado: resultado.estado as 'activa' | 'critica' | 'quiebra',
         periodo_actual: periodo,
+        updatedAt: new Date(),
       })
     }
 
@@ -77,16 +84,22 @@ export async function POST(request: NextRequest) {
     const resultadosAnterior = new Map<string, any>()
     if (periodo > 1) {
       for (const equipo of equipos) {
-        const resultadoAnterior = await getResultadoEquipoPeriodo(equipo.id, competenciaId, periodo - 1)
-        if (resultadoAnterior) {
-          resultadosAnterior.set(equipo.id, resultadoAnterior)
+        const prevSnap = await adminDb
+          .collection('resultados_periodo')
+          .where('equipo_id', '==', equipo.id)
+          .where('competencia_id', '==', competenciaId)
+          .where('periodo', '==', periodo - 1)
+          .limit(1)
+          .get()
+        if (!prevSnap.empty) {
+          resultadosAnterior.set(equipo.id, { id: prevSnap.docs[0].id, ...prevSnap.docs[0].data() })
         }
       }
     }
 
     const laVozData = generarLaVoz(periodo, evento ? { ...evento } : null, resultadosAnterior)
 
-    const laVozId = await guardarLaVoz({
+    const laVozRef = await adminDb.collection('la_voz').add({
       competencia_id: competenciaId,
       periodo,
       analisis_anterior: laVozData.analisis,
@@ -97,6 +110,7 @@ export async function POST(request: NextRequest) {
       consejos_estrategicos: generarConsejos(resultadosGuardados),
       timestamp: new Date(),
     })
+    const laVozId = laVozRef.id
 
     // Generar reportes financieros para cada equipo
     for (const resultado of resultadosGuardados) {
@@ -149,7 +163,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date(),
       }
 
-      await guardarReporte(reporteData)
+      await adminDb.collection('reportes_financieros').add(reporteData)
     }
 
     const nextPeriodo = periodo + 1
@@ -161,7 +175,7 @@ export async function POST(request: NextRequest) {
       competenciaUpdates.estado = 'en_curso'
       competenciaUpdates.periodo_actual = nextPeriodo
     }
-    await updateDoc(doc(db, 'competencias', competenciaId), {
+    await adminDb.collection('competencias').doc(competenciaId).update({
       ...competenciaUpdates,
       updatedAt: new Date(),
     })
