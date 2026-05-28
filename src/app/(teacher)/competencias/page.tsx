@@ -74,6 +74,11 @@ export default function CompetenciasPage() {
 
     setCreatingCompetencia(true)
     try {
+      // Fecha de inicio es hoy, fecha de fin es hoy + (número de períodos * 7 días)
+      const fechaInicio = new Date()
+      const fechaFin = new Date()
+      fechaFin.setDate(fechaFin.getDate() + createFormData.total_periodos * 7)
+
       const nuevaCompetencia = {
         nombre: createFormData.nombre,
         descripcion: createFormData.descripcion,
@@ -82,6 +87,8 @@ export default function CompetenciasPage() {
         periodo_actual: 1,
         total_periodos: createFormData.total_periodos,
         capital_inicial: createFormData.capital_inicial,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
         equipos: [],
       }
 
