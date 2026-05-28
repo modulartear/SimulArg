@@ -15,6 +15,11 @@ export default function Dashboard() {
   const router = useRouter()
   const formatCurrency = useFormatCurrency()
 
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push('/login')
+  }
+
   const { equipo, loading: equipoLoading } = useUsuarioEquipo(user?.uid || '')
   const { resultados, loading: resultadosLoading } = useResultadosEquipo(
     equipo?.id || '',
@@ -33,8 +38,20 @@ export default function Dashboard() {
 
   if (loading || equipoLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Cargando...</div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-end mb-8 pt-4">
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center">
+          <div className="text-white text-2xl">Cargando...</div>
+        </div>
       </div>
     )
   }
@@ -46,20 +63,27 @@ export default function Dashboard() {
 
   if (!equipo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 shadow-xl text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No hay equipo asignado</h2>
-          <p className="text-gray-600">
-            Tu profesor aún no te ha asignado a un equipo. Por favor, contacta a tu profesor.
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-end mb-8 pt-4">
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 shadow-xl text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No hay equipo asignado</h2>
+            <p className="text-gray-600">
+              Tu profesor aún no te ha asignado a un equipo. Por favor, contacta a tu profesor.
+            </p>
+          </div>
         </div>
       </div>
     )
-  }
-
-  const handleLogout = async () => {
-    await signOut(auth)
-    router.push('/login')
   }
 
   // Calcular cambio comparando con período anterior
