@@ -59,11 +59,11 @@ export default function SignupPage() {
       )
 
       // Guardar datos adicionales en Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      await setDoc(doc(db, 'usuarios', userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: formData.email,
-        name: formData.name,
-        role: 'student',
+        nombre: formData.name,
+        rol: 'student',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
