@@ -64,6 +64,11 @@ export default function CompetenciasPage() {
         setUsuarios(data)
       } catch (err) {
         console.error('Error cargando usuarios:', err)
+        setMessage({
+          type: 'error',
+          text: 'No se pudieron cargar los usuarios. Revisá las reglas de Firestore para permitir que el profesor lea la colección "usuarios".',
+        })
+        setTimeout(() => setMessage(null), 7000)
       } finally {
         setLoadingUsuarios(false)
       }
@@ -653,7 +658,7 @@ export default function CompetenciasPage() {
             ) : (
               <div className="max-h-96 overflow-y-auto space-y-2">
                 {usuarios
-                  .filter((u) => u.rol === 'student')
+                  .filter((u) => u.rol === 'student' || !u.rol)
                   .map((usuario) => {
                     const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
                     const isMember = equipo?.miembros?.includes(usuario.uid)
@@ -676,8 +681,14 @@ export default function CompetenciasPage() {
                       </div>
                     )
                   })}
-                {usuarios.filter((u) => u.rol === 'student').length === 0 && (
-                  <p className="text-gray-600 text-center py-8">No hay estudiantes registrados</p>
+                {usuarios.filter((u) => u.rol === 'student' || !u.rol).length === 0 && (
+                  <div className="text-gray-600 text-center py-8 space-y-2">
+                    <p>No hay estudiantes visibles.</p>
+                    <p className="text-sm">
+                      Si en Firestore sí existen, revisá las reglas: el profesor debe poder leer la colección
+                      "usuarios".
+                    </p>
+                  </div>
                 )}
               </div>
             )}
