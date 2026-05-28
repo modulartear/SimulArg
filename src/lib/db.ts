@@ -51,6 +51,22 @@ export async function getUsuario(uid: string): Promise<Usuario | null> {
   }
 }
 
+export async function getUsuarios(): Promise<Usuario[]> {
+  try {
+    const docsSnap = await getDocs(collection(db, 'usuarios'))
+    return docsSnap.docs.map((d) => {
+      const data = d.data() as Partial<Usuario>
+      return {
+        ...data,
+        uid: data.uid ?? d.id,
+      } as Usuario
+    })
+  } catch (error) {
+    console.error('Error obteniendo usuarios:', error)
+    return []
+  }
+}
+
 // ============================================
 // COMPETENCIAS
 // ============================================
@@ -108,6 +124,18 @@ export async function crearEquipo(equipo: Omit<Equipo, 'id' | 'createdAt' | 'upd
   }
 }
 
+export async function actualizarEquipo(equipoId: string, updates: Partial<Equipo>) {
+  try {
+    await updateDoc(doc(db, 'equipos', equipoId), {
+      ...updates,
+      updatedAt: new Date(),
+    })
+  } catch (error) {
+    console.error('Error actualizando equipo:', error)
+    throw error
+  }
+}
+
 export async function getEquiposCompetencia(competenciaId: string): Promise<Equipo[]> {
   try {
     const q = query(collection(db, 'equipos'), where('competencia_id', '==', competenciaId))
@@ -129,17 +157,6 @@ export async function getEquipo(id: string): Promise<Equipo | null> {
   }
 }
 
-export async function actualizarEquipo(id: string, updates: Partial<Equipo>) {
-  try {
-    await updateDoc(doc(db, 'equipos', id), {
-      ...updates,
-      updatedAt: new Date(),
-    })
-  } catch (error) {
-    console.error('Error actualizando equipo:', error)
-    throw error
-  }
-}
 
 // ============================================
 // DECISIONES

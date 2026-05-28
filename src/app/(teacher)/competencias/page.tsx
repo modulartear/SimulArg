@@ -6,8 +6,9 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { getCompetencias, getEquiposCompetencia, crearCompetencia, crearEquipo } from '@/lib/db'
+import { getCompetencias, getEquiposCompetencia, crearCompetencia, crearEquipo, getUsuarios, actualizarEquipo } from '@/lib/db'
 import { useFormatCurrency } from '@/lib/hooks'
+import type { Usuario } from '@/types'
 import type { Competencia, Equipo } from '@/types'
 
 export default function CompetenciasPage() {
@@ -35,6 +36,10 @@ export default function CompetenciasPage() {
     nombre: '',
   })
   const [creatingTeam, setCreatingTeam] = useState(false)
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true)
+  const [selectedTeamForMembers, setSelectedTeamForMembers] = useState<string | null>(null)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
 
   useEffect(() => {
     const loadCompetencias = async () => {
@@ -51,6 +56,21 @@ export default function CompetenciasPage() {
 
     if (user) loadCompetencias()
   }, [user])
+
+  useEffect(() => {
+    const loadUsuarios = async () => {
+      try {
+        const data = await getUsuarios()
+        setUsuarios(data)
+      } catch (err) {
+        console.error('Error cargando usuarios:', err)
+      } finally {
+        setLoadingUsuarios(false)
+      }
+    }
+
+    loadUsuarios()
+  }, [])
 
   useEffect(() => {
     const loadEquipos = async () => {
@@ -162,6 +182,56 @@ export default function CompetenciasPage() {
       setTimeout(() => setMessage(null), 5000)
     } finally {
       setCreatingTeam(false)
+    }
+  }
+
+  const handleAddMember = async (usuarioId: string) => {
+    if (!selectedTeamForMembers) return
+
+    const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
+    if (!equipo) return
+
+    try {
+      await actualizarEquipo(selectedTeamForMembers, {
+        miembros: [...(equipo.miembros || []), usuarioId],
+      })
+
+      // Recargar la lista de equipos
+      const equiposData = await getEquiposCompetencia(selectedCompetencia!)
+      setEquipos(equiposData)
+
+      setShowAddMemberModal(false)
+      setSelectedTeamForMembers(null)
+      setMessage({ type: 'success', text: '¡Miembro agregado exitosamente!' })
+      setTimeout(() => setMessage(null), 5000)
+    } catch (err) {
+      console.error('Error agregando miembro:', err)
+      setMessage({ type: 'error', text: 'Error al agregar el miembro' })
+      setTimeout(() => setMessage(null), 5000)
+    }
+  }
+
+  const handleRemoveMember = async (usuarioId: string) => {
+    if (!selectedTeamForMembers) return
+
+    const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
+    if (!equipo) return
+
+    try {
+      await actualizarEquipo(selectedTeamForMembers, {
+        miembros: (equipo.miembros || []).filter((id) => id !== usuarioId),
+      })
+
+      // Recargar la lista de equipos
+      const equiposData = await getEquiposCompetencia(selectedCompetencia!)
+      setEquipos(equiposData)
+
+      setMessage({ type: 'success', text: '¡Miembro eliminado exitosamente!' })
+      setTimeout(() => setMessage(null), 5000)
+    } catch (err) {
+      console.error('Error eliminando miembro:', err)
+      setMessage({ type: 'error', text: 'Error al eliminar el miembro' })
+      setTimeout(() => setMessage(null), 5000)
     }
   }
 
@@ -500,41 +570,53 @@ export default function CompetenciasPage() {
                   ) : equipos.length === 0 ? (
                     <p className="text-gray-600">No hay equipos en esta competencia</p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-100 border-b">
-                            <th className="px-4 py-2 text-left font-semibold text-gray-900">Equipo</th>
-                            <th className="px-4 py-2 text-right font-semibold text-gray-900">Efectivo</th>
-                            <th className="px-4 py-2 text-right font-semibold text-gray-900">Ganancia Acum.</th>
-                            <th className="px-4 py-2 text-right font-semibold text-gray-900">Estado</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {equipos.map((equipo) => (
-                            <tr key={equipo.id} className="border-b hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-900">{equipo.nombre}</td>
-                              <td className="px-4 py-3 text-right">{formatCurrency(equipo.efectivo)}</td>
-                              <td className="px-4 py-3 text-right font-semibold text-green-600">
-                                {formatCurrency(equipo.ganancia_acumulada)}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span
-                                  className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                    equipo.estado === 'activa'
-                                      ? 'bg-green-100 text-green-800'
-                                      : equipo.estado === 'critica'
-                                        ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {equipo.estado}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="space-y-4">
+                      {equipos.map((equipo) => (
+                        <div key={equipo.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{equipo.nombre}</h4>
+                              <div className="text-sm text-gray-600">
+                                <span>{formatCurrency(equipo.efectivo)} • {equipo.estado}</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedTeamForMembers(equipo.id)
+                                setShowAddMemberModal(true)
+                              }}
+                              className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
+                            >
+                              Gestionar Miembros
+                            </button>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Miembros ({equipo.miembros?.length || 0}:</span>
+                            <div className="mt-2 space-y-1">
+                              {equipo.miembros && equipo.miembros.map((miembroId) => {
+                                const usuario = usuarios.find((u) => u.uid === miembroId)
+                                return (
+                                  <div key={miembroId} className="flex justify-between items-center bg-white p-2 rounded">
+                                    <span>{usuario?.nombre || usuario?.email || miembroId}</span>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedTeamForMembers(equipo.id)
+                                        handleRemoveMember(miembroId)
+                                      }}
+                                      className="text-red-500 hover:text-red-700 text-xs"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                              {(!equipo.miembros || equipo.miembros.length === 0) && (
+                                <span className="text-gray-400 italic">No hay miembros en este equipo</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -547,6 +629,60 @@ export default function CompetenciasPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal para agregar miembros */}
+      {showAddMemberModal && selectedTeamForMembers && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Agregar Miembro</h3>
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setSelectedTeamForMembers(null)
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {loadingUsuarios ? (
+              <p className="text-gray-600">Cargando usuarios...</p>
+            ) : (
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {usuarios
+                  .filter((u) => u.rol === 'student')
+                  .map((usuario) => {
+                    const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
+                    const isMember = equipo?.miembros?.includes(usuario.uid)
+                    return (
+                      <div key={usuario.uid} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium text-gray-900">{usuario.nombre || usuario.email}</p>
+                          <p className="text-sm text-gray-600">{usuario.email}</p>
+                        </div>
+                        {isMember ? (
+                          <span className="text-green-600 text-sm font-semibold">Agregado</span>
+                        ) : (
+                          <button
+                            onClick={() => handleAddMember(usuario.uid)}
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm font-semibold"
+                          >
+                            Agregar
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                {usuarios.filter((u) => u.rol === 'student').length === 0 && (
+                  <p className="text-gray-600 text-center py-8">No hay estudiantes registrados</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
