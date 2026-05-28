@@ -94,7 +94,7 @@ export default function Dashboard() {
             onClick={handleLogout}
             className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
           >
-            Salir
+            Cerrar Sesión
           </button>
         </div>
 

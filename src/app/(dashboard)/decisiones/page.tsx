@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import { signOut } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 import Link from 'next/link'
 import Tabs from '@/components/ui/Tabs'
 import { useFormatCurrency, useUsuarioEquipo } from '@/lib/hooks'
@@ -135,6 +137,11 @@ export default function DecisionesPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push('/login')
   }
 
   const handleSubmit = async () => {
@@ -385,9 +392,18 @@ export default function DecisionesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-900 p-4">
       <div className="max-w-4xl mx-auto">
-        <Link href="/dashboard" className="text-purple-200 hover:text-white mb-6 inline-block">
-          ← Volver al Dashboard
-        </Link>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6 pt-4">
+          <Link href="/dashboard" className="text-purple-200 hover:text-white">
+            ← Volver al Dashboard
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition font-semibold"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
 
         <div className="bg-white rounded-lg shadow-xl p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
