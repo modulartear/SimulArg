@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { getCompetencias, getEquiposCompetencia } from '@/lib/db'
+import { getCompetencias, getEquiposCompetencia, crearCompetencia } from '@/lib/db'
 import { useFormatCurrency } from '@/lib/hooks'
 import type { Competencia, Equipo } from '@/types'
 
@@ -22,6 +22,14 @@ export default function CompetenciasPage() {
   const [loadingEquipos, setLoadingEquipos] = useState(false)
   const [processingPeriodo, setProcessingPeriodo] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [createFormData, setCreateFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    total_periodos: 12,
+    capital_inicial: 100000,
+  })
+  const [creatingCompetencia, setCreatingCompetencia] = useState(false)
 
   useEffect(() => {
     const loadCompetencias = async () => {
@@ -59,6 +67,47 @@ export default function CompetenciasPage() {
 
     loadEquipos()
   }, [selectedCompetencia])
+
+  const handleCreateCompetencia = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+
+    setCreatingCompetencia(true)
+    try {
+      const nuevaCompetencia = {
+        nombre: createFormData.nombre,
+        descripcion: createFormData.descripcion,
+        profesor_id: user.uid,
+        estado: 'preparacion' as const,
+        periodo_actual: 1,
+        total_periodos: createFormData.total_periodos,
+        capital_inicial: createFormData.capital_inicial,
+        equipos: [],
+      }
+
+      const competenciaId = await crearCompetencia(nuevaCompetencia)
+      
+      // Recargar la lista de competencias
+      const data = await getCompetencias(user.uid)
+      setCompetencias(data)
+
+      setShowCreateForm(false)
+      setCreateFormData({
+        nombre: '',
+        descripcion: '',
+        total_periodos: 12,
+        capital_inicial: 100000,
+      })
+      setMessage({ type: 'success', text: '¡Competencia creada exitosamente!' })
+      setTimeout(() => setMessage(null), 5000)
+    } catch (err) {
+      console.error('Error creando competencia:', err)
+      setMessage({ type: 'error', text: 'Error al crear la competencia' })
+      setTimeout(() => setMessage(null), 5000)
+    } finally {
+      setCreatingCompetencia(false)
+    }
+  }
 
   console.log('User:', user)
   console.log('Rol:', user?.rol)
@@ -159,16 +208,106 @@ export default function CompetenciasPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Lista de competencias */}
           <div className="lg:col-span-1 bg-white rounded-lg shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mis Competencias</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Mis Competencias</h2>
+              {!showCreateForm && competencias.length > 0 && (
+                <button 
+                  onClick={() => setShowCreateForm(true)}
+                  className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
+                >
+                  + Nueva
+                </button>
+              )}
+            </div>
 
-            {competencias.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">No tienes competencias creadas</p>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
-                  + Crear Competencia
+            {competencias.length === 0 && !showCreateForm ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">No tienes competencias creadas</p>
+            <button 
+              onClick={() => setShowCreateForm(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 text-white px-6 py-2 rounded-lg transition font-semibold"
+            >
+              + Crear Competencia
+            </button>
+          </div>
+        ) : showCreateForm ? (
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Nueva Competencia</h3>
+              <button 
+                onClick={() => setShowCreateForm(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreateCompetencia} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Competencia</label>
+                <input
+                  type="text"
+                  required
+                  value={createFormData.nombre}
+                  onChange={(e) => setCreateFormData({...createFormData, nombre: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Simulación Empresarial 2024"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea
+                  value={createFormData.descripcion}
+                  onChange={(e) => setCreateFormData({...createFormData, descripcion: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Descripción de la competencia..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total de Períodos</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="24"
+                    required
+                    value={createFormData.total_periodos}
+                    onChange={(e) => setCreateFormData({...createFormData, total_periodos: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Capital Inicial ($)</label>
+                  <input
+                    type="number"
+                    min="1000"
+                    step="1000"
+                    required
+                    value={createFormData.capital_inicial}
+                    onChange={(e) => setCreateFormData({...createFormData, capital_inicial: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingCompetencia}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition font-semibold"
+                >
+                  {creatingCompetencia ? 'Creando...' : 'Crear Competencia'}
                 </button>
               </div>
-            ) : (
+            </form>
+          </div>
+        ) : (
               <div className="space-y-2">
                 {competencias.map((comp) => (
                   <button
