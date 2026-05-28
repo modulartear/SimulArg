@@ -29,9 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        console.log('Cargando datos del usuario:', firebaseUser.uid)
         const userDoc = await getDoc(doc(db, 'usuarios', firebaseUser.uid))
+        console.log('Documento existe:', userDoc.exists())
         if (userDoc.exists()) {
-          setUserData(userDoc.data() as Partial<Usuario>)
+          const data = userDoc.data() as Partial<Usuario>
+          console.log('Datos del usuario:', data)
+          setUserData(data)
         } else {
           setUserData(null)
         }
