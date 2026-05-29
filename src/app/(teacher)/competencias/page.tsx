@@ -25,6 +25,7 @@ export default function CompetenciasPage() {
   const router = useRouter()
   const formatCurrency = useFormatCurrency()
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [competencias, setCompetencias] = useState<Competencia[]>([])
   const [loadingCompetencias, setLoadingCompetencias] = useState(true)
   const [selectedCompetencia, setSelectedCompetencia] = useState<string | null>(null)
@@ -407,15 +408,29 @@ export default function CompetenciasPage() {
 
   return (
     <div className="min-h-screen org-shell">
-      <div className="mx-auto max-w-[1320px] px-4 py-6">
-        <div className="grid grid-cols-[280px_1fr] gap-6">
-          <aside className="org-panel p-4 text-white/90">
+      <div className="mx-auto max-w-[1320px] px-3 py-4 sm:px-4 sm:py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6">
+          <div className={`fixed inset-0 z-40 bg-black/60 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`} onClick={() => setSidebarOpen(false)} />
+          <aside
+            className={`org-panel p-4 text-white/90 lg:static lg:block lg:h-auto lg:translate-x-0 lg:w-auto ${
+              sidebarOpen
+                ? 'fixed z-50 top-3 bottom-3 left-3 w-[280px] overflow-y-auto'
+                : 'hidden'
+            }`}
+          >
             <div className="flex items-center gap-3 px-3 py-3">
               <div className="h-9 w-9 rounded-xl org-btn-primary" />
               <div className="leading-tight">
                 <div className="text-sm font-extrabold tracking-wide">EMPRENDE</div>
                 <div className="text-xs font-semibold text-white/60">SIMULADOR EMPRESARIAL</div>
               </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="ml-auto lg:hidden org-btn-secondary rounded-xl px-3 py-2 text-white/80 text-sm font-semibold"
+                type="button"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="mt-4 space-y-2">
@@ -522,7 +537,27 @@ export default function CompetenciasPage() {
           </aside>
 
           <main className="text-white">
-            <div className="grid grid-cols-[1.2fr_1fr_0.9fr_0.9fr_220px] gap-3 items-stretch">
+            <div className="lg:hidden mb-4 flex items-center justify-between gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="org-btn-secondary rounded-xl px-4 py-2 text-sm font-extrabold text-white"
+                type="button"
+              >
+                ☰ Menú
+              </button>
+              <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70 truncate">
+                {competenciaSeleccionada?.nombre || 'Sin competencia'}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="org-btn-secondary rounded-xl px-4 py-2 text-sm font-extrabold text-white"
+                type="button"
+              >
+                Salir
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.9fr_0.9fr_220px] gap-3 items-stretch">
               <div className="org-panel p-4">
                 <div className="text-[10px] font-bold tracking-widest text-white/50">TEMPORADA ACTUAL</div>
                 <div className="mt-1 text-lg font-extrabold">{competenciaSeleccionada?.nombre || '—'}</div>
@@ -558,7 +593,7 @@ export default function CompetenciasPage() {
                 <div className="mt-1 text-xs text-white/60">En 15:30 min</div>
               </div>
 
-              <div className="org-panel p-4 flex items-center justify-between gap-3">
+              <div className="org-panel p-4 flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-1">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 rounded-full bg-white/10 border border-white/10" />
                   <div className="min-w-0">
@@ -572,7 +607,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-6 gap-3">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               <div className="org-panel p-4 flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">🏷</div>
                 <div>
@@ -625,7 +660,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-[1.45fr_1fr_0.9fr] gap-3">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1.45fr_1fr_0.9fr] gap-3">
               <div className="org-panel p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
@@ -636,8 +671,8 @@ export default function CompetenciasPage() {
                     + Nuevo Equipo
                   </button>
                 </div>
-                <div className="mt-3 overflow-hidden rounded-xl border org-divider">
-                  <table className="w-full text-left text-xs">
+                <div className="mt-3 overflow-x-auto rounded-xl border org-divider">
+                  <table className="w-full min-w-[980px] text-left text-xs">
                     <thead className="bg-white/5 text-white/70">
                       <tr>
                         <th className="px-3 py-2 font-semibold">POS</th>
@@ -792,7 +827,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-[0.9fr_1.1fr_1fr] gap-3">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr_1fr] gap-3">
               <div className="org-panel p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
@@ -861,7 +896,7 @@ export default function CompetenciasPage() {
                   <div className="text-xs font-extrabold tracking-wide text-white/80">EQUIPOS Y ESTUDIANTES</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {equipos.slice(0, 8).map((e) => (
                     <div key={e.id} className="org-panel org-panel-soft p-3">
                       <div className="flex items-center justify-between">
@@ -900,13 +935,13 @@ export default function CompetenciasPage() {
               </div>
             )}
 
-            <div className="mt-4 org-panel p-3 flex items-center justify-between gap-3">
+            <div className="mt-4 org-panel p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs text-white/60">
                 Centro de control del organizador
                 <span className="text-white/40"> • </span>
                 Supervisa, guía y acompaña a los equipos en su camino al éxito.
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90">
                   Generar reporte
                 </button>
