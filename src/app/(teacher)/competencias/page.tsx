@@ -408,8 +408,8 @@ export default function CompetenciasPage() {
 
   return (
     <div className="min-h-screen org-shell">
-      <div className="mx-auto max-w-[1320px] px-3 py-4 sm:px-4 sm:py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6">
+      <div className="w-full px-3 py-4 sm:px-4 sm:py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 lg:gap-6">
           <div className={`fixed inset-0 z-40 bg-black/60 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`} onClick={() => setSidebarOpen(false)} />
           <aside
             className={`org-panel p-4 text-white/90 lg:static lg:block lg:h-auto lg:translate-x-0 lg:w-auto ${
@@ -557,7 +557,7 @@ export default function CompetenciasPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.9fr_0.9fr_220px] gap-3 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(240px,0.85fr)] gap-3 items-stretch">
               <div className="org-panel p-4">
                 <div className="text-[10px] font-bold tracking-widest text-white/50">TEMPORADA ACTUAL</div>
                 <div className="mt-1 text-lg font-extrabold">{competenciaSeleccionada?.nombre || '—'}</div>
@@ -660,7 +660,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1.45fr_1fr_0.9fr] gap-3">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(360px,1.05fr)] xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.05fr)_minmax(420px,1.1fr)] gap-3">
               <div className="org-panel p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
@@ -827,7 +827,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr_1fr] gap-3">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)_minmax(360px,1.1fr)] xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.35fr)_minmax(420px,1.15fr)] gap-3">
               <div className="org-panel p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
