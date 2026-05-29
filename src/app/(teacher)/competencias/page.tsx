@@ -407,12 +407,12 @@ export default function CompetenciasPage() {
   ]
 
   return (
-    <div className="min-h-screen org-shell">
-      <div className="w-full px-3 py-4 sm:px-4 sm:py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 lg:gap-6">
+    <div className="min-h-screen org-shell lg:h-screen lg:overflow-hidden">
+      <div className="w-full px-3 py-4 sm:px-4 sm:py-6 lg:h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 lg:gap-6 lg:h-full">
           <div className={`fixed inset-0 z-40 bg-black/60 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`} onClick={() => setSidebarOpen(false)} />
           <aside
-            className={`org-panel p-4 text-white/90 lg:static lg:block lg:h-auto lg:translate-x-0 lg:w-auto ${
+            className={`org-panel p-4 text-white/90 lg:static lg:block lg:h-full lg:overflow-y-auto lg:translate-x-0 lg:w-auto ${
               sidebarOpen
                 ? 'fixed z-50 top-3 bottom-3 left-3 w-[280px] overflow-y-auto'
                 : 'hidden'
@@ -536,7 +536,7 @@ export default function CompetenciasPage() {
             </div>
           </aside>
 
-          <main className="text-white">
+          <main className="text-white lg:h-full lg:min-h-0 lg:overflow-hidden flex flex-col">
             <div className="lg:hidden mb-4 flex items-center justify-between gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -557,7 +557,8 @@ export default function CompetenciasPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(240px,0.85fr)] gap-3 items-stretch">
+            <div className="shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(240px,0.85fr)] gap-3 items-stretch">
               <div className="org-panel p-4">
                 <div className="text-[10px] font-bold tracking-widest text-white/50">TEMPORADA ACTUAL</div>
                 <div className="mt-1 text-lg font-extrabold">{competenciaSeleccionada?.nombre || '—'}</div>
@@ -607,7 +608,7 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               <div className="org-panel p-4 flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">🏷</div>
                 <div>
@@ -659,9 +660,11 @@ export default function CompetenciasPage() {
                 </div>
               </div>
             </div>
+            </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(360px,1.05fr)] xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.05fr)_minmax(420px,1.1fr)] gap-3">
-              <div className="org-panel p-4">
+            <div className="mt-4 flex flex-col gap-3 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(360px,1.05fr)] xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.05fr)_minmax(420px,1.1fr)] gap-3 lg:flex-[1.05] lg:min-h-0">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
                   <button
@@ -671,7 +674,7 @@ export default function CompetenciasPage() {
                     + Nuevo Equipo
                   </button>
                 </div>
-                <div className="mt-3 overflow-x-auto rounded-xl border org-divider">
+                <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-xl border org-divider">
                   <table className="w-full min-w-[980px] text-left text-xs">
                     <thead className="bg-white/5 text-white/70">
                       <tr>
@@ -778,12 +781,12 @@ export default function CompetenciasPage() {
                 </div>
               </div>
 
-              <div className="org-panel p-4">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">ACTIVIDAD EN TIEMPO REAL</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
                 </div>
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
                   {activityItems.map((a) => (
                     <div key={`${a.time}-${a.title}`} className="org-panel org-panel-soft px-3 py-2 flex items-center gap-3">
                       <div className="w-12 text-[10px] text-white/50 font-semibold tabular-nums">{a.time}</div>
@@ -804,12 +807,12 @@ export default function CompetenciasPage() {
                 </div>
               </div>
 
-              <div className="org-panel p-4">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">NOTICIAS DEL MERCADO</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todas</button>
                 </div>
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
                   {marketNews.map((n) => (
                     <div key={n.title} className="org-panel org-panel-soft p-3 relative overflow-hidden">
                       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${n.color}`} />
@@ -827,13 +830,13 @@ export default function CompetenciasPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)_minmax(360px,1.1fr)] xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.35fr)_minmax(420px,1.15fr)] gap-3">
-              <div className="org-panel p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)_minmax(360px,1.1fr)] xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.35fr)_minmax(420px,1.15fr)] gap-3 lg:flex-[0.95] lg:min-h-0">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver calendario</button>
                 </div>
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
                   {Array.from({ length: Math.min(6, rondasTotales || 6) }).map((_, idx) => {
                     const ronda = idx + 1
                     const status =
@@ -848,12 +851,12 @@ export default function CompetenciasPage() {
                 </div>
               </div>
 
-              <div className="org-panel p-4">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">EVOLUCIÓN DEL MERCADO</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver analíticas</button>
                 </div>
-                <div className="mt-3 org-panel org-panel-soft p-4 h-[220px]">
+                <div className="mt-3 org-panel org-panel-soft p-4 flex-1 min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
@@ -891,12 +894,12 @@ export default function CompetenciasPage() {
                 </div>
               </div>
 
-              <div className="org-panel p-4">
+              <div className="org-panel p-4 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-extrabold tracking-wide text-white/80">EQUIPOS Y ESTUDIANTES</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
                 </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1 min-h-0">
                   {equipos.slice(0, 8).map((e) => (
                     <div key={e.id} className="org-panel org-panel-soft p-3">
                       <div className="flex items-center justify-between">
@@ -935,7 +938,7 @@ export default function CompetenciasPage() {
               </div>
             )}
 
-            <div className="mt-4 org-panel p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="org-panel p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
               <div className="text-xs text-white/60">
                 Centro de control del organizador
                 <span className="text-white/40"> • </span>
@@ -952,6 +955,7 @@ export default function CompetenciasPage() {
                   Anunciar evento
                 </button>
               </div>
+            </div>
             </div>
           </main>
         </div>
