@@ -26,6 +26,19 @@ export default function CompetenciasPage() {
   const formatCurrency = useFormatCurrency()
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<
+    | 'overview'
+    | 'equipos'
+    | 'estudiantes'
+    | 'rondas'
+    | 'eventos'
+    | 'noticias'
+    | 'ranking'
+    | 'reportes'
+    | 'analiticas'
+    | 'mensajes'
+    | 'configuracion'
+  >('overview')
   const [competencias, setCompetencias] = useState<Competencia[]>([])
   const [loadingCompetencias, setLoadingCompetencias] = useState(true)
   const [selectedCompetencia, setSelectedCompetencia] = useState<string | null>(null)
@@ -51,6 +64,8 @@ export default function CompetenciasPage() {
   const [loadingUsuarios, setLoadingUsuarios] = useState(true)
   const [selectedTeamForMembers, setSelectedTeamForMembers] = useState<string | null>(null)
   const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [assigningUserId, setAssigningUserId] = useState<string | null>(null)
+  const [assignSelection, setAssignSelection] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const loadCompetencias = async () => {
@@ -257,6 +272,66 @@ export default function CompetenciasPage() {
     }
   }
 
+  const closeSidebarOnMobile = () => {
+    setSidebarOpen(false)
+  }
+
+  const navigateTo = (
+    section:
+      | 'overview'
+      | 'equipos'
+      | 'estudiantes'
+      | 'rondas'
+      | 'eventos'
+      | 'noticias'
+      | 'ranking'
+      | 'reportes'
+      | 'analiticas'
+      | 'mensajes'
+      | 'configuracion'
+  ) => {
+    setActiveSection(section)
+    closeSidebarOnMobile()
+  }
+
+  const handleAssignStudent = async (studentUid: string) => {
+    const targetTeamId = assignSelection[studentUid] || ''
+    if (!selectedCompetencia) return
+    if (equipos.length === 0) {
+      setMessage({ type: 'error', text: 'Primero crea al menos un equipo.' })
+      setTimeout(() => setMessage(null), 5000)
+      return
+    }
+
+    const teamsWithStudent = equipos.filter((e) => (e.miembros || []).includes(studentUid))
+    const targetTeam = targetTeamId ? equipos.find((e) => e.id === targetTeamId) : null
+
+    setAssigningUserId(studentUid)
+    try {
+      await Promise.all(
+        teamsWithStudent
+          .filter((t) => t.id !== targetTeamId)
+          .map((t) => actualizarEquipo(t.id, { miembros: (t.miembros || []).filter((m) => m !== studentUid) }))
+      )
+
+      if (targetTeam && !(targetTeam.miembros || []).includes(studentUid)) {
+        await actualizarEquipo(targetTeam.id, { miembros: [...(targetTeam.miembros || []), studentUid] })
+      }
+
+      const equiposData = await getEquiposCompetencia(selectedCompetencia)
+      setEquipos(equiposData)
+
+      setMessage({ type: 'success', text: 'Asignación actualizada.' })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err) {
+      console.error('Error asignando estudiante:', err)
+      setMessage({ type: 'error', text: 'Error al asignar el estudiante.' })
+      setTimeout(() => setMessage(null), 5000)
+    } finally {
+      setAssigningUserId(null)
+    }
+  }
+
   if (loading || loadingCompetencias) {
     return (
       <div className="min-h-screen app-bg flex items-center justify-center">
@@ -406,6 +481,575 @@ export default function CompetenciasPage() {
     },
   ]
 
+  const students = usuarios.filter((u) => u.rol === 'student' || !u.rol)
+  const teamByStudentUid = new Map<string, Equipo>()
+  for (const equipo of equipos) {
+    for (const uid of equipo.miembros || []) {
+      if (!teamByStudentUid.has(uid)) teamByStudentUid.set(uid, equipo)
+    }
+  }
+
+  const renderSection = () => {
+    if (!competenciaSeleccionada) {
+      return (
+        <div className="org-panel p-6 text-white/80">
+          <div className="text-lg font-extrabold">Sin competencia</div>
+          <div className="mt-2 text-sm text-white/60">
+            Crea una competencia para comenzar a gestionar equipos, estudiantes y rondas.
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white"
+              type="button"
+            >
+              Crear competencia
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    if (activeSection === 'overview') {
+      return (
+        <>
+          <div className="mt-4 flex flex-col gap-3 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(360px,1.05fr)] xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.05fr)_minmax(420px,1.1fr)] gap-3 lg:flex-[1.05] lg:min-h-0">
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
+                  <button
+                    onClick={() => setShowCreateTeamForm(true)}
+                    className="org-btn-secondary rounded-xl px-3 py-2 text-xs font-semibold text-white"
+                    type="button"
+                  >
+                    + Nuevo Equipo
+                  </button>
+                </div>
+                <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-xl border org-divider">
+                  <table className="w-full min-w-[980px] text-left text-xs">
+                    <thead className="bg-white/5 text-white/70">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold">POS</th>
+                        <th className="px-3 py-2 font-semibold">EQUIPO</th>
+                        <th className="px-3 py-2 font-semibold text-right">UTILIDAD ACUMULADA</th>
+                        <th className="px-3 py-2 font-semibold text-right">VENTAS TOTALES</th>
+                        <th className="px-3 py-2 font-semibold text-right">MARKET SHARE</th>
+                        <th className="px-3 py-2 font-semibold text-center">REPUTACIÓN</th>
+                        <th className="px-3 py-2 font-semibold text-center">ESTADO</th>
+                        <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y org-divider">
+                      {ordenEquipos.map((equipo, idx) => {
+                        const ratio = (Number(equipo.ganancia_acumulada) || 0) / maxGanancia
+                        const stars = Math.max(1, Math.min(5, Math.round(ratio * 5)))
+                        const marketShare = equiposCount ? Math.round((100 / equiposCount) * 10) / 10 : 0
+                        const ventasTotales = Math.round((Number(equipo.efectivo) || 0) * 0.82)
+                        return (
+                          <tr key={equipo.id} className="hover:bg-white/5">
+                            <td className="px-3 py-2 text-white/70 tabular-nums">
+                              {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-7 w-7 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center text-[10px] font-extrabold">
+                                  {equipo.nombre.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-extrabold truncate">{equipo.nombre}</div>
+                                  <div className="text-[10px] text-white/50">{equipo.miembros?.length || 0} miembros</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
+                              {formatCurrency(equipo.ganancia_acumulada)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
+                              {formatCurrency(ventasTotales)}
+                            </td>
+                            <td className="px-3 py-2 text-right text-white/80 font-semibold tabular-nums">{marketShare}%</td>
+                            <td className="px-3 py-2 text-center">
+                              <div className="inline-flex gap-0.5 text-[12px]">
+                                {Array.from({ length: 5 }).map((_, s) => (
+                                  <span key={s} className={s < stars ? 'text-yellow-300' : 'text-white/20'}>
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
+                                {equipo.estado === 'activa' ? 'Estable' : equipo.estado === 'critica' ? 'En baja' : 'En crisis'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedTeamForMembers(equipo.id)
+                                  setShowAddMemberModal(true)
+                                }}
+                                className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
+                                type="button"
+                              >
+                                Gestionar
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {equipos.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="px-3 py-8 text-center text-white/60">
+                            No hay equipos en esta competencia
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 flex gap-3">
+                  {competenciaSeleccionada?.estado === 'preparacion' && (
+                    <button
+                      onClick={handleStartCompetencia}
+                      disabled={startingCompetencia}
+                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                      type="button"
+                    >
+                      {startingCompetencia ? 'Iniciando...' : 'Iniciar competencia'}
+                    </button>
+                  )}
+                  {competenciaSeleccionada?.estado === 'en_curso' && (
+                    <button
+                      onClick={handleProcessPeriodo}
+                      disabled={processingPeriodo}
+                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                      type="button"
+                    >
+                      {processingPeriodo ? 'Procesando...' : 'Procesar período'}
+                    </button>
+                  )}
+                  <div className="flex-1" />
+                  <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70">
+                    Período {rondaActual}/{rondasTotales || '—'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">ACTIVIDAD EN TIEMPO REAL</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90" type="button">
+                    Ver todos
+                  </button>
+                </div>
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {activityItems.map((a) => (
+                    <div key={`${a.time}-${a.title}`} className="org-panel org-panel-soft px-3 py-2 flex items-center gap-3">
+                      <div className="w-12 text-[10px] text-white/50 font-semibold tabular-nums">{a.time}</div>
+                      <div
+                        className={`h-8 w-8 rounded-xl border border-white/10 flex items-center justify-center text-sm ${
+                          a.kind === 'ok'
+                            ? 'bg-emerald-500/15 text-emerald-200'
+                            : a.kind === 'warn'
+                              ? 'bg-amber-500/15 text-amber-200'
+                              : 'bg-sky-500/15 text-sky-200'
+                        }`}
+                      >
+                        {a.kind === 'ok' ? '✓' : a.kind === 'warn' ? '!' : 'i'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-extrabold truncate">{a.title}</div>
+                        <div className="text-[10px] text-white/60 truncate">{a.desc}</div>
+                      </div>
+                      <div className="ml-auto text-[10px] text-white/50">2 min</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">NOTICIAS DEL MERCADO</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90" type="button">
+                    Ver todas
+                  </button>
+                </div>
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {marketNews.map((n) => (
+                    <div key={n.title} className="org-panel org-panel-soft p-3 relative overflow-hidden">
+                      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${n.color}`} />
+                      <div className="relative">
+                        <div className="flex items-center justify-between">
+                          <div className={`text-xs font-extrabold ${n.accent}`}>{n.title}</div>
+                          <div className="text-[10px] text-white/50">{n.tag}</div>
+                        </div>
+                        <div className="mt-2 text-xs text-white/70">{n.text}</div>
+                        <div className="mt-2 text-[10px] text-white/50">{n.meta}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)_minmax(360px,1.1fr)] xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.35fr)_minmax(420px,1.15fr)] gap-3 lg:flex-[0.95] lg:min-h-0">
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90" type="button">
+                    Ver calendario
+                  </button>
+                </div>
+                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {Array.from({ length: Math.min(6, rondasTotales || 6) }).map((_, idx) => {
+                    const ronda = idx + 1
+                    const status =
+                      ronda < rondaActual ? 'Completada' : ronda === rondaActual ? 'En curso' : 'Próxima'
+                    return (
+                      <div key={ronda} className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                        <div className="text-xs font-bold">Ronda {ronda}</div>
+                        <div className="text-[10px] text-white/60">{status}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">EVOLUCIÓN DEL MERCADO</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90" type="button">
+                    Ver analíticas
+                  </button>
+                </div>
+                <div className="mt-3 org-panel org-panel-soft p-4 flex-1 min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="periodo"
+                        tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.12)' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 10 }}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.12)' }}
+                        tickLine={false}
+                        width={34}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(10,12,24,0.9)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          color: 'rgba(255,255,255,0.9)',
+                          fontSize: 12,
+                        }}
+                        labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
+                        formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      />
+                      <Line type="monotone" dataKey="ventas" stroke="#43d692" strokeWidth={2} dot={false} name="Ventas totales" />
+                      <Line type="monotone" dataKey="utilidad" stroke="#7852ff" strokeWidth={2} dot={false} name="Utilidad total" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Efectivo promedio</div>
+                    <div className="text-sm font-extrabold">
+                      {equiposCount ? formatCurrency(Math.round(sumaEfectivo / equiposCount)) : '—'}
+                    </div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Utilidad promedio</div>
+                    <div className="text-sm font-extrabold">
+                      {equiposCount ? formatCurrency(Math.round(sumaGanancia / equiposCount)) : '—'}
+                    </div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Participación</div>
+                    <div className="text-sm font-extrabold">12.5%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="org-panel p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">EQUIPOS Y ESTUDIANTES</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90" type="button">
+                    Ver todos
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {equipos.slice(0, 8).map((e) => (
+                    <div key={e.id} className="org-panel org-panel-soft p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-extrabold">{e.nombre}</div>
+                        <div className="text-[10px] text-white/60">{e.miembros?.length || 0} conectados</div>
+                      </div>
+                      <div className="mt-2 flex -space-x-2">
+                        {(e.miembros || []).slice(0, 4).map((m) => (
+                          <div key={m} className="h-6 w-6 rounded-full bg-white/10 border border-white/10" />
+                        ))}
+                        {(e.miembros || []).length === 0 && (
+                          <div className="text-[10px] text-white/50">Sin miembros</div>
+                        )}
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full org-btn-primary"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(
+                                ((e.miembros?.length || 0) /
+                                  Math.max(1, Math.max(...equipos.map((t) => t.miembros?.length || 0), 4))) *
+                                  100
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-3 w-full org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold" type="button">
+                  Enviar mensaje a todos los equipos
+                </button>
+              </div>
+            </div>
+
+            {message && (
+              <div className="mt-4 org-panel org-panel-soft p-3 text-sm">
+                <span className={message.type === 'success' ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {message.type === 'success' ? '✓ ' : '✕ '}
+                </span>
+                <span className="text-white/80">{message.text}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="org-panel p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+            <div className="text-xs text-white/60">
+              Centro de control del organizador
+              <span className="text-white/40"> • </span>
+              Supervisa, guía y acompaña a los equipos en su camino al éxito.
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90" type="button">
+                Generar reporte
+              </button>
+              <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90" type="button">
+                Exportar datos
+              </button>
+              <button className="org-btn-primary rounded-xl px-4 py-2 text-xs font-extrabold text-white" type="button">
+                Anunciar evento
+              </button>
+            </div>
+          </div>
+        </>
+      )
+    }
+
+    if (activeSection === 'equipos') {
+      return (
+        <div className="mt-4 flex flex-col gap-3 flex-1 min-h-0">
+          <div className="org-panel p-4 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-extrabold tracking-wide text-white/70">Equipos</div>
+              <div className="text-lg font-extrabold">{competenciaSeleccionada.nombre}</div>
+            </div>
+            <button
+              onClick={() => setShowCreateTeamForm(true)}
+              className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white"
+              type="button"
+            >
+              + Nuevo Equipo
+            </button>
+          </div>
+
+          <div className="org-panel p-4 flex flex-col min-h-0">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
+              <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70">
+                Período {rondaActual}/{rondasTotales || '—'}
+              </div>
+            </div>
+            <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-xl border org-divider">
+              <table className="w-full min-w-[980px] text-left text-xs">
+                <thead className="bg-white/5 text-white/70">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">POS</th>
+                    <th className="px-3 py-2 font-semibold">EQUIPO</th>
+                    <th className="px-3 py-2 font-semibold text-right">UTILIDAD ACUMULADA</th>
+                    <th className="px-3 py-2 font-semibold text-right">EFECTIVO</th>
+                    <th className="px-3 py-2 font-semibold text-center">MIEMBROS</th>
+                    <th className="px-3 py-2 font-semibold text-center">ESTADO</th>
+                    <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y org-divider">
+                  {ordenEquipos.map((equipo, idx) => (
+                    <tr key={equipo.id} className="hover:bg-white/5">
+                      <td className="px-3 py-2 text-white/70 tabular-nums">{idx + 1}</td>
+                      <td className="px-3 py-2 font-extrabold">{equipo.nombre}</td>
+                      <td className="px-3 py-2 text-right font-extrabold tabular-nums">{formatCurrency(equipo.ganancia_acumulada)}</td>
+                      <td className="px-3 py-2 text-right font-extrabold tabular-nums">{formatCurrency(equipo.efectivo)}</td>
+                      <td className="px-3 py-2 text-center text-white/80 font-semibold tabular-nums">{equipo.miembros?.length || 0}</td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">{equipo.estado}</span>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedTeamForMembers(equipo.id)
+                            setShowAddMemberModal(true)
+                          }}
+                          className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
+                          type="button"
+                        >
+                          Gestionar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {equipos.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-3 py-10 text-center text-white/60">
+                        No hay equipos en esta competencia
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {message && (
+              <div className="mt-3 org-panel org-panel-soft p-3 text-sm">
+                <span className={message.type === 'success' ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {message.type === 'success' ? '✓ ' : '✕ '}
+                </span>
+                <span className="text-white/80">{message.text}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    if (activeSection === 'estudiantes') {
+      return (
+        <div className="mt-4 flex flex-col gap-3 flex-1 min-h-0">
+          <div className="org-panel p-4 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-extrabold tracking-wide text-white/70">Estudiantes</div>
+              <div className="text-lg font-extrabold">{competenciaSeleccionada.nombre}</div>
+            </div>
+            <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70">
+              {students.length} estudiantes
+            </div>
+          </div>
+
+          <div className="org-panel p-4 flex flex-col min-h-0">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-extrabold tracking-wide text-white/80">ASIGNACIÓN A EQUIPOS</div>
+              <div className="text-[10px] text-white/50">
+                Un estudiante queda asignado a 1 equipo (si estaba en otro, se mueve).
+              </div>
+            </div>
+
+            <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-xl border org-divider">
+              <table className="w-full min-w-[860px] text-left text-xs">
+                <thead className="bg-white/5 text-white/70">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">ESTUDIANTE</th>
+                    <th className="px-3 py-2 font-semibold">EMAIL</th>
+                    <th className="px-3 py-2 font-semibold">EQUIPO</th>
+                    <th className="px-3 py-2 font-semibold">ASIGNAR</th>
+                    <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y org-divider">
+                  {students.map((s) => {
+                    const currentTeam = teamByStudentUid.get(s.uid)
+                    const selected = assignSelection[s.uid] ?? currentTeam?.id ?? ''
+                    const busy = assigningUserId === s.uid
+                    return (
+                      <tr key={s.uid} className="hover:bg-white/5">
+                        <td className="px-3 py-2 font-extrabold">{s.nombre || '—'}</td>
+                        <td className="px-3 py-2 text-white/70">{s.email}</td>
+                        <td className="px-3 py-2">
+                          {currentTeam ? (
+                            <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
+                              {currentTeam.nombre}
+                            </span>
+                          ) : (
+                            <span className="text-white/50 text-[10px]">Sin equipo</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={selected}
+                            onChange={(e) => setAssignSelection((prev) => ({ ...prev, [s.uid]: e.target.value }))}
+                            className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                          >
+                            <option value="">Sin equipo</option>
+                            {equipos.map((e) => (
+                              <option key={e.id} value={e.id}>
+                                {e.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            onClick={() => handleAssignStudent(s.uid)}
+                            disabled={busy}
+                            className="org-btn-primary rounded-xl px-3 py-2 text-[10px] font-extrabold text-white disabled:opacity-50"
+                            type="button"
+                          >
+                            {busy ? 'Guardando...' : 'Guardar'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {students.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-10 text-center text-white/60">
+                        No hay estudiantes registrados.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {message && (
+              <div className="mt-3 org-panel org-panel-soft p-3 text-sm">
+                <span className={message.type === 'success' ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {message.type === 'success' ? '✓ ' : '✕ '}
+                </span>
+                <span className="text-white/80">{message.text}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="mt-4 org-panel p-6 text-white/80">
+        <div className="text-lg font-extrabold">Sección en preparación</div>
+        <div className="mt-2 text-sm text-white/60">
+          Esta sección la activamos en el siguiente paso (Rondas, Eventos, Noticias, Reportes y Analíticas).
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen org-shell lg:h-screen lg:overflow-hidden">
       <div className="w-full px-3 py-4 sm:px-4 sm:py-6 lg:h-full">
@@ -435,27 +1079,63 @@ export default function CompetenciasPage() {
 
             <div className="mt-4 space-y-2">
               <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">GESTIÓN DEL TORNEO</div>
-              <button className="w-full org-btn-primary text-white rounded-xl px-3 py-2.5 text-left font-semibold shadow flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('overview')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold shadow flex items-center gap-2 ${
+                  activeSection === 'overview' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 border border-white/10">▦</span>
                 Vista General
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('equipos')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'equipos' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">🏷</span>
                 Equipos
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('estudiantes')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'estudiantes' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">👥</span>
                 Estudiantes
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('rondas')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'rondas' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⏱</span>
                 Rondas
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('eventos')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'eventos' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⚡</span>
                 Eventos
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('noticias')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'noticias' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📰</span>
                 Noticias
               </button>
@@ -463,15 +1143,33 @@ export default function CompetenciasPage() {
 
             <div className="mt-6 space-y-2">
               <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">MONITOREO</div>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('ranking')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'ranking' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">🏆</span>
                 Ranking en vivo
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('reportes')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'reportes' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📄</span>
                 Reportes
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('analiticas')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'analiticas' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📈</span>
                 Analíticas
               </button>
@@ -479,11 +1177,23 @@ export default function CompetenciasPage() {
 
             <div className="mt-6 space-y-2">
               <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">HERRAMIENTAS</div>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('mensajes')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'mensajes' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">✉</span>
                 Mensajes
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+              <button
+                onClick={() => navigateTo('configuracion')}
+                className={`w-full rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2 ${
+                  activeSection === 'configuracion' ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/80'
+                }`}
+                type="button"
+              >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⚙</span>
                 Configuración
               </button>
@@ -662,300 +1372,8 @@ export default function CompetenciasPage() {
             </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 flex-1 min-h-0">
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)_minmax(360px,1.05fr)] xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1.05fr)_minmax(420px,1.1fr)] gap-3 lg:flex-[1.05] lg:min-h-0">
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
-                  <button
-                    onClick={() => setShowCreateTeamForm(true)}
-                    className="org-btn-secondary rounded-xl px-3 py-2 text-xs font-semibold text-white"
-                  >
-                    + Nuevo Equipo
-                  </button>
-                </div>
-                <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-xl border org-divider">
-                  <table className="w-full min-w-[980px] text-left text-xs">
-                    <thead className="bg-white/5 text-white/70">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold">POS</th>
-                        <th className="px-3 py-2 font-semibold">EQUIPO</th>
-                        <th className="px-3 py-2 font-semibold text-right">UTILIDAD ACUMULADA</th>
-                        <th className="px-3 py-2 font-semibold text-right">VENTAS TOTALES</th>
-                        <th className="px-3 py-2 font-semibold text-right">MARKET SHARE</th>
-                        <th className="px-3 py-2 font-semibold text-center">REPUTACIÓN</th>
-                        <th className="px-3 py-2 font-semibold text-center">ESTADO</th>
-                        <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y org-divider">
-                      {ordenEquipos.map((equipo, idx) => {
-                        const ratio = (Number(equipo.ganancia_acumulada) || 0) / maxGanancia
-                        const stars = Math.max(1, Math.min(5, Math.round(ratio * 5)))
-                        const marketShare = equiposCount ? Math.round((100 / equiposCount) * 10) / 10 : 0
-                        const ventasTotales = Math.round((Number(equipo.efectivo) || 0) * 0.82)
-                        return (
-                          <tr key={equipo.id} className="hover:bg-white/5">
-                            <td className="px-3 py-2 text-white/70 tabular-nums">
-                              {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                <div className="h-7 w-7 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center text-[10px] font-extrabold">
-                                  {equipo.nombre.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="font-extrabold truncate">{equipo.nombre}</div>
-                                  <div className="text-[10px] text-white/50">{equipo.miembros?.length || 0} miembros</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
-                              {formatCurrency(equipo.ganancia_acumulada)}
-                            </td>
-                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
-                              {formatCurrency(ventasTotales)}
-                            </td>
-                            <td className="px-3 py-2 text-right text-white/80 font-semibold tabular-nums">{marketShare}%</td>
-                            <td className="px-3 py-2 text-center">
-                              <div className="inline-flex gap-0.5 text-[12px]">
-                                {Array.from({ length: 5 }).map((_, s) => (
-                                  <span key={s} className={s < stars ? 'text-yellow-300' : 'text-white/20'}>
-                                    ★
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
-                                {equipo.estado === 'activa' ? 'Estable' : equipo.estado === 'critica' ? 'En baja' : 'En crisis'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <button
-                                onClick={() => {
-                                  setSelectedTeamForMembers(equipo.id)
-                                  setShowAddMemberModal(true)
-                                }}
-                                className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
-                              >
-                                Gestionar
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                      {equipos.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="px-3 py-8 text-center text-white/60">
-                            No hay equipos en esta competencia
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-3 flex gap-3">
-                  {competenciaSeleccionada?.estado === 'preparacion' && (
-                    <button
-                      onClick={handleStartCompetencia}
-                      disabled={startingCompetencia}
-                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-                    >
-                      {startingCompetencia ? 'Iniciando...' : 'Iniciar competencia'}
-                    </button>
-                  )}
-                  {competenciaSeleccionada?.estado === 'en_curso' && (
-                    <button
-                      onClick={handleProcessPeriodo}
-                      disabled={processingPeriodo}
-                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-                    >
-                      {processingPeriodo ? 'Procesando...' : 'Procesar período'}
-                    </button>
-                  )}
-                  <div className="flex-1" />
-                  <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70">
-                    Período {rondaActual}/{rondasTotales || '—'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">ACTIVIDAD EN TIEMPO REAL</div>
-                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
-                </div>
-                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
-                  {activityItems.map((a) => (
-                    <div key={`${a.time}-${a.title}`} className="org-panel org-panel-soft px-3 py-2 flex items-center gap-3">
-                      <div className="w-12 text-[10px] text-white/50 font-semibold tabular-nums">{a.time}</div>
-                      <div
-                        className={`h-8 w-8 rounded-xl border border-white/10 flex items-center justify-center text-sm ${
-                          a.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-200' : a.kind === 'warn' ? 'bg-amber-500/15 text-amber-200' : 'bg-sky-500/15 text-sky-200'
-                        }`}
-                      >
-                        {a.kind === 'ok' ? '✓' : a.kind === 'warn' ? '!' : 'i'}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-extrabold truncate">{a.title}</div>
-                        <div className="text-[10px] text-white/60 truncate">{a.desc}</div>
-                      </div>
-                      <div className="ml-auto text-[10px] text-white/50">2 min</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">NOTICIAS DEL MERCADO</div>
-                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todas</button>
-                </div>
-                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
-                  {marketNews.map((n) => (
-                    <div key={n.title} className="org-panel org-panel-soft p-3 relative overflow-hidden">
-                      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${n.color}`} />
-                      <div className="relative">
-                        <div className="flex items-center justify-between">
-                          <div className={`text-xs font-extrabold ${n.accent}`}>{n.title}</div>
-                          <div className="text-[10px] text-white/50">{n.tag}</div>
-                        </div>
-                        <div className="mt-2 text-xs text-white/70">{n.text}</div>
-                        <div className="mt-2 text-[10px] text-white/50">{n.meta}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.25fr)_minmax(360px,1.1fr)] xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.35fr)_minmax(420px,1.15fr)] gap-3 lg:flex-[0.95] lg:min-h-0">
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
-                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver calendario</button>
-                </div>
-                <div className="mt-3 space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
-                  {Array.from({ length: Math.min(6, rondasTotales || 6) }).map((_, idx) => {
-                    const ronda = idx + 1
-                    const status =
-                      ronda < rondaActual ? 'Completada' : ronda === rondaActual ? 'En curso' : 'Próxima'
-                    return (
-                      <div key={ronda} className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
-                        <div className="text-xs font-bold">Ronda {ronda}</div>
-                        <div className="text-[10px] text-white/60">{status}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">EVOLUCIÓN DEL MERCADO</div>
-                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver analíticas</button>
-                </div>
-                <div className="mt-3 org-panel org-panel-soft p-4 flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
-                      <XAxis dataKey="periodo" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.12)' }} tickLine={false} />
-                      <YAxis tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.12)' }} tickLine={false} width={34} />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'rgba(10,12,24,0.9)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          borderRadius: 12,
-                          color: 'rgba(255,255,255,0.9)',
-                          fontSize: 12,
-                        }}
-                        labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
-                        formatter={(value: any) => formatCurrency(Number(value) || 0)}
-                      />
-                      <Line type="monotone" dataKey="ventas" stroke="#43d692" strokeWidth={2} dot={false} name="Ventas totales" />
-                      <Line type="monotone" dataKey="utilidad" stroke="#7852ff" strokeWidth={2} dot={false} name="Utilidad total" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="text-[10px] text-white/50 font-bold">Efectivo promedio</div>
-                    <div className="text-sm font-extrabold">{equiposCount ? formatCurrency(Math.round(sumaEfectivo / equiposCount)) : '—'}</div>
-                  </div>
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="text-[10px] text-white/50 font-bold">Utilidad promedio</div>
-                    <div className="text-sm font-extrabold">{equiposCount ? formatCurrency(Math.round(sumaGanancia / equiposCount)) : '—'}</div>
-                  </div>
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="text-[10px] text-white/50 font-bold">Participación</div>
-                    <div className="text-sm font-extrabold">12.5%</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="org-panel p-4 flex flex-col min-h-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-extrabold tracking-wide text-white/80">EQUIPOS Y ESTUDIANTES</div>
-                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
-                </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1 min-h-0">
-                  {equipos.slice(0, 8).map((e) => (
-                    <div key={e.id} className="org-panel org-panel-soft p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs font-extrabold">{e.nombre}</div>
-                        <div className="text-[10px] text-white/60">{e.miembros?.length || 0} conectados</div>
-                      </div>
-                      <div className="mt-2 flex -space-x-2">
-                        {(e.miembros || []).slice(0, 4).map((m) => (
-                          <div key={m} className="h-6 w-6 rounded-full bg-white/10 border border-white/10" />
-                        ))}
-                        {(e.miembros || []).length === 0 && (
-                          <div className="text-[10px] text-white/50">Sin miembros</div>
-                        )}
-                      </div>
-                      <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
-                        <div
-                          className="h-full org-btn-primary"
-                          style={{ width: `${Math.min(100, Math.round(((e.miembros?.length || 0) / Math.max(1, Math.max(...equipos.map((t) => t.miembros?.length || 0), 4))) * 100))}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button className="mt-3 w-full org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold">
-                  Enviar mensaje a todos los equipos
-                </button>
-              </div>
-            </div>
-
-            {message && (
-              <div className="mt-4 org-panel org-panel-soft p-3 text-sm">
-                <span className={message.type === 'success' ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>
-                  {message.type === 'success' ? '✓ ' : '✕ '}
-                </span>
-                <span className="text-white/80">{message.text}</span>
-              </div>
-            )}
-
-            <div className="org-panel p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
-              <div className="text-xs text-white/60">
-                Centro de control del organizador
-                <span className="text-white/40"> • </span>
-                Supervisa, guía y acompaña a los equipos en su camino al éxito.
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90">
-                  Generar reporte
-                </button>
-                <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90">
-                  Exportar datos
-                </button>
-                <button className="org-btn-primary rounded-xl px-4 py-2 text-xs font-extrabold text-white">
-                  Anunciar evento
-                </button>
-              </div>
-            </div>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {renderSection()}
             </div>
           </main>
         </div>
