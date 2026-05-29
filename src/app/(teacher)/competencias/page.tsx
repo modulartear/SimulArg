@@ -6,6 +6,7 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import {
   getCompetencias,
   getEquiposCompetencia,
@@ -360,6 +361,49 @@ export default function CompetenciasPage() {
   const rondasCompletadas = Math.max(0, rondaActual - 1)
   const sumaEfectivo = equipos.reduce((acc, e) => acc + (Number(e.efectivo) || 0), 0)
   const sumaGanancia = equipos.reduce((acc, e) => acc + (Number(e.ganancia_acumulada) || 0), 0)
+  const ordenEquipos = [...equipos].sort((a, b) => (b.ganancia_acumulada || 0) - (a.ganancia_acumulada || 0))
+  const maxGanancia = Math.max(1, ...ordenEquipos.map((e) => Number(e.ganancia_acumulada) || 0))
+  const chartData = Array.from({ length: Math.max(1, Math.min(rondaActual || 1, rondasTotales || 8)) }).map((_, idx) => {
+    const p = idx + 1
+    const ventas = Math.round((p / Math.max(1, rondasTotales || 8)) * (sumaEfectivo * 0.55 + 1200000))
+    const utilidad = Math.round((p / Math.max(1, rondasTotales || 8)) * (sumaGanancia * 0.6 + 250000))
+    return { periodo: `R${p}`, ventas, utilidad }
+  })
+
+  const activityItems = [
+    { time: '14:35', title: 'TechZone', desc: 'tomó decisión en la ronda 3', kind: 'ok' as const },
+    { time: '14:32', title: 'NovaTech', desc: 'actualizó estrategia de precios', kind: 'info' as const },
+    { time: '14:30', title: 'DigitalPro', desc: 'cargó inversión de I+D', kind: 'warn' as const },
+    { time: '14:28', title: 'SmartLab', desc: 'solicitó préstamo bancario', kind: 'info' as const },
+    { time: '14:25', title: 'ByteCorp', desc: 'aumentó producción a 100%', kind: 'ok' as const },
+  ]
+
+  const marketNews = [
+    {
+      title: 'BOOM TECNOLÓGICO',
+      tag: 'Evento positivo',
+      text: 'La demanda de productos tecnológicos aumenta 20% esta ronda.',
+      color: 'from-emerald-500/30 to-emerald-500/0',
+      accent: 'text-emerald-300',
+      meta: '1 / 3 rondas restantes',
+    },
+    {
+      title: 'INFLACIÓN',
+      tag: 'Evento negativo',
+      text: 'Los costos de producción aumentan 15% esta ronda.',
+      color: 'from-amber-500/30 to-amber-500/0',
+      accent: 'text-amber-300',
+      meta: '1 / 3 rondas restantes',
+    },
+    {
+      title: 'NUEVO SUBSIDIO',
+      tag: 'Evento positivo',
+      text: 'Incentivos a inversión en I+D esta ronda.',
+      color: 'from-sky-500/30 to-sky-500/0',
+      accent: 'text-sky-300',
+      meta: '2 / 3 rondas restantes',
+    },
+  ]
 
   return (
     <div className="min-h-screen org-shell">
@@ -376,36 +420,57 @@ export default function CompetenciasPage() {
 
             <div className="mt-4 space-y-2">
               <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">GESTIÓN DEL TORNEO</div>
-              <button className="w-full org-btn-primary text-white rounded-xl px-3 py-2.5 text-left font-semibold shadow">
+              <button className="w-full org-btn-primary text-white rounded-xl px-3 py-2.5 text-left font-semibold shadow flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 border border-white/10">▦</span>
                 Vista General
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">🏷</span>
                 Equipos
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">👥</span>
                 Estudiantes
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⏱</span>
                 Rondas
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⚡</span>
                 Eventos
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📰</span>
                 Noticias
               </button>
             </div>
 
             <div className="mt-6 space-y-2">
               <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">MONITOREO</div>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">🏆</span>
                 Ranking en vivo
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📄</span>
                 Reportes
               </button>
-              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">📈</span>
                 Analíticas
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-2">
+              <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">HERRAMIENTAS</div>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">✉</span>
+                Mensajes
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10">⚙</span>
+                Configuración
               </button>
             </div>
 
@@ -508,37 +573,55 @@ export default function CompetenciasPage() {
             </div>
 
             <div className="mt-4 grid grid-cols-6 gap-3">
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Equipos</div>
-                <div className="mt-1 text-2xl font-extrabold">{equiposCount}</div>
-                <div className="text-white/50 text-xs">Todos activos</div>
-              </div>
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Estudiantes</div>
-                <div className="mt-1 text-2xl font-extrabold">{estudiantesCount}</div>
-                <div className="text-white/50 text-xs">{equiposCount > 0 ? `${Math.round(estudiantesCount / equiposCount)} por equipo` : '—'}</div>
-              </div>
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Rondas completadas</div>
-                <div className="mt-1 text-2xl font-extrabold">
-                  {rondasCompletadas} / {rondasTotales || '—'}
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">🏷</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Equipos</div>
+                  <div className="mt-1 text-2xl font-extrabold">{equiposCount}</div>
+                  <div className="text-white/50 text-xs">Todos activos</div>
                 </div>
-                <div className="text-white/50 text-xs">{rondasTotales ? `${Math.round((rondasCompletadas / rondasTotales) * 100)}% del torneo` : '—'}</div>
               </div>
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Efectivo total</div>
-                <div className="mt-1 text-2xl font-extrabold">{formatCurrency(sumaEfectivo)}</div>
-                <div className="text-white/50 text-xs">En esta ronda</div>
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">👥</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Estudiantes</div>
+                  <div className="mt-1 text-2xl font-extrabold">{estudiantesCount}</div>
+                  <div className="text-white/50 text-xs">{equiposCount > 0 ? `${Math.round(estudiantesCount / equiposCount)} por equipo` : '—'}</div>
+                </div>
               </div>
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Utilidad acumulada</div>
-                <div className="mt-1 text-2xl font-extrabold">{formatCurrency(sumaGanancia)}</div>
-                <div className="text-white/50 text-xs">Todas las rondas</div>
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">✅</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Rondas completadas</div>
+                  <div className="mt-1 text-2xl font-extrabold">
+                    {rondasCompletadas} / {rondasTotales || '—'}
+                  </div>
+                  <div className="text-white/50 text-xs">{rondasTotales ? `${Math.round((rondasCompletadas / rondasTotales) * 100)}% del torneo` : '—'}</div>
+                </div>
               </div>
-              <div className="org-panel p-4">
-                <div className="text-white/60 text-xs font-semibold">Crecimiento mercado</div>
-                <div className="mt-1 text-2xl font-extrabold">+12.4%</div>
-                <div className="text-white/50 text-xs">vs ronda anterior</div>
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">🔥</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Ventas totales del mercado</div>
+                  <div className="mt-1 text-2xl font-extrabold">{formatCurrency(Math.round(sumaEfectivo * 0.9))}</div>
+                  <div className="text-white/50 text-xs">En esta ronda</div>
+                </div>
+              </div>
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">💲</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Utilidad total acumulada</div>
+                  <div className="mt-1 text-2xl font-extrabold">{formatCurrency(sumaGanancia)}</div>
+                  <div className="text-white/50 text-xs">Todas las rondas</div>
+                </div>
+              </div>
+              <div className="org-panel p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">📈</div>
+                <div>
+                  <div className="text-white/60 text-xs font-semibold">Crecimiento del mercado</div>
+                  <div className="mt-1 text-2xl font-extrabold">+12.4%</div>
+                  <div className="text-white/50 text-xs">vs ronda anterior</div>
+                </div>
               </div>
             </div>
 
@@ -559,43 +642,74 @@ export default function CompetenciasPage() {
                       <tr>
                         <th className="px-3 py-2 font-semibold">POS</th>
                         <th className="px-3 py-2 font-semibold">EQUIPO</th>
-                        <th className="px-3 py-2 font-semibold text-right">UTILIDAD</th>
-                        <th className="px-3 py-2 font-semibold text-right">EFECTIVO</th>
+                        <th className="px-3 py-2 font-semibold text-right">UTILIDAD ACUMULADA</th>
+                        <th className="px-3 py-2 font-semibold text-right">VENTAS TOTALES</th>
+                        <th className="px-3 py-2 font-semibold text-right">MARKET SHARE</th>
+                        <th className="px-3 py-2 font-semibold text-center">REPUTACIÓN</th>
                         <th className="px-3 py-2 font-semibold text-center">ESTADO</th>
                         <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y org-divider">
-                      {equipos.map((equipo, idx) => (
-                        <tr key={equipo.id} className="hover:bg-white/5">
-                          <td className="px-3 py-2 text-white/70">{idx + 1}</td>
-                          <td className="px-3 py-2">
-                            <div className="font-bold">{equipo.nombre}</div>
-                            <div className="text-[10px] text-white/50">{equipo.miembros?.length || 0} miembros</div>
-                          </td>
-                          <td className="px-3 py-2 text-right font-extrabold">{formatCurrency(equipo.ganancia_acumulada)}</td>
-                          <td className="px-3 py-2 text-right font-extrabold">{formatCurrency(equipo.efectivo)}</td>
-                          <td className="px-3 py-2 text-center">
-                            <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
-                              {equipo.estado}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedTeamForMembers(equipo.id)
-                                setShowAddMemberModal(true)
-                              }}
-                              className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
-                            >
-                              Gestionar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {ordenEquipos.map((equipo, idx) => {
+                        const ratio = (Number(equipo.ganancia_acumulada) || 0) / maxGanancia
+                        const stars = Math.max(1, Math.min(5, Math.round(ratio * 5)))
+                        const marketShare = equiposCount ? Math.round((100 / equiposCount) * 10) / 10 : 0
+                        const ventasTotales = Math.round((Number(equipo.efectivo) || 0) * 0.82)
+                        return (
+                          <tr key={equipo.id} className="hover:bg-white/5">
+                            <td className="px-3 py-2 text-white/70 tabular-nums">
+                              {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-7 w-7 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center text-[10px] font-extrabold">
+                                  {equipo.nombre.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-extrabold truncate">{equipo.nombre}</div>
+                                  <div className="text-[10px] text-white/50">{equipo.miembros?.length || 0} miembros</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
+                              {formatCurrency(equipo.ganancia_acumulada)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-extrabold tabular-nums">
+                              {formatCurrency(ventasTotales)}
+                            </td>
+                            <td className="px-3 py-2 text-right text-white/80 font-semibold tabular-nums">{marketShare}%</td>
+                            <td className="px-3 py-2 text-center">
+                              <div className="inline-flex gap-0.5 text-[12px]">
+                                {Array.from({ length: 5 }).map((_, s) => (
+                                  <span key={s} className={s < stars ? 'text-yellow-300' : 'text-white/20'}>
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
+                                {equipo.estado === 'activa' ? 'Estable' : equipo.estado === 'critica' ? 'En baja' : 'En crisis'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedTeamForMembers(equipo.id)
+                                  setShowAddMemberModal(true)
+                                }}
+                                className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
+                              >
+                                Gestionar
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
                       {equipos.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-3 py-8 text-center text-white/60">
+                          <td colSpan={8} className="px-3 py-8 text-center text-white/60">
                             No hay equipos en esta competencia
                           </td>
                         </tr>
@@ -635,27 +749,23 @@ export default function CompetenciasPage() {
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
                 </div>
                 <div className="mt-3 space-y-2">
-                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
-                    <div className="text-xs">
-                      <div className="font-bold">Nuevo equipo creado</div>
-                      <div className="text-[10px] text-white/60">Hace 2 min</div>
+                  {activityItems.map((a) => (
+                    <div key={`${a.time}-${a.title}`} className="org-panel org-panel-soft px-3 py-2 flex items-center gap-3">
+                      <div className="w-12 text-[10px] text-white/50 font-semibold tabular-nums">{a.time}</div>
+                      <div
+                        className={`h-8 w-8 rounded-xl border border-white/10 flex items-center justify-center text-sm ${
+                          a.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-200' : a.kind === 'warn' ? 'bg-amber-500/15 text-amber-200' : 'bg-sky-500/15 text-sky-200'
+                        }`}
+                      >
+                        {a.kind === 'ok' ? '✓' : a.kind === 'warn' ? '!' : 'i'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-extrabold truncate">{a.title}</div>
+                        <div className="text-[10px] text-white/60 truncate">{a.desc}</div>
+                      </div>
+                      <div className="ml-auto text-[10px] text-white/50">2 min</div>
                     </div>
-                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Equipo</div>
-                  </div>
-                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
-                    <div className="text-xs">
-                      <div className="font-bold">Miembro asignado a equipo</div>
-                      <div className="text-[10px] text-white/60">Hace 5 min</div>
-                    </div>
-                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Usuarios</div>
-                  </div>
-                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
-                    <div className="text-xs">
-                      <div className="font-bold">Ronda lista para procesar</div>
-                      <div className="text-[10px] text-white/60">Hace 9 min</div>
-                    </div>
-                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Ronda</div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -665,36 +775,19 @@ export default function CompetenciasPage() {
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todas</button>
                 </div>
                 <div className="mt-3 space-y-2">
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-extrabold text-emerald-300">BOOM TECNOLÓGICO</div>
-                      <div className="text-[10px] text-white/50">Evento positivo</div>
+                  {marketNews.map((n) => (
+                    <div key={n.title} className="org-panel org-panel-soft p-3 relative overflow-hidden">
+                      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${n.color}`} />
+                      <div className="relative">
+                        <div className="flex items-center justify-between">
+                          <div className={`text-xs font-extrabold ${n.accent}`}>{n.title}</div>
+                          <div className="text-[10px] text-white/50">{n.tag}</div>
+                        </div>
+                        <div className="mt-2 text-xs text-white/70">{n.text}</div>
+                        <div className="mt-2 text-[10px] text-white/50">{n.meta}</div>
+                      </div>
                     </div>
-                    <div className="mt-2 text-xs text-white/70">
-                      La demanda de productos tecnológicos aumenta 20% esta ronda.
-                    </div>
-                    <div className="mt-2 text-[10px] text-white/50">1 / 3 rondas restantes</div>
-                  </div>
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-extrabold text-amber-300">INFLACIÓN</div>
-                      <div className="text-[10px] text-white/50">Evento negativo</div>
-                    </div>
-                    <div className="mt-2 text-xs text-white/70">
-                      Los costos de producción aumentan 15% esta ronda.
-                    </div>
-                    <div className="mt-2 text-[10px] text-white/50">1 / 3 rondas restantes</div>
-                  </div>
-                  <div className="org-panel org-panel-soft p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-extrabold text-sky-300">NUEVO SUBSIDIO</div>
-                      <div className="text-[10px] text-white/50">Evento positivo</div>
-                    </div>
-                    <div className="mt-2 text-xs text-white/70">
-                      Incentivos a inversión en I+D esta ronda.
-                    </div>
-                    <div className="mt-2 text-[10px] text-white/50">2 / 3 rondas restantes</div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -725,8 +818,27 @@ export default function CompetenciasPage() {
                   <div className="text-xs font-extrabold tracking-wide text-white/80">EVOLUCIÓN DEL MERCADO</div>
                   <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver analíticas</button>
                 </div>
-                <div className="mt-3 org-panel org-panel-soft p-4 h-[220px] flex items-center justify-center text-white/60 text-sm">
-                  Gráfico de evolución (próximo paso)
+                <div className="mt-3 org-panel org-panel-soft p-4 h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                      <XAxis dataKey="periodo" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.12)' }} tickLine={false} />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.12)' }} tickLine={false} width={34} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(10,12,24,0.9)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          color: 'rgba(255,255,255,0.9)',
+                          fontSize: 12,
+                        }}
+                        labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
+                        formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                      />
+                      <Line type="monotone" dataKey="ventas" stroke="#43d692" strokeWidth={2} dot={false} name="Ventas totales" />
+                      <Line type="monotone" dataKey="utilidad" stroke="#7852ff" strokeWidth={2} dot={false} name="Utilidad total" />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <div className="org-panel org-panel-soft p-3">
@@ -765,7 +877,10 @@ export default function CompetenciasPage() {
                         )}
                       </div>
                       <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
-                        <div className="h-full w-[70%] org-btn-primary" />
+                        <div
+                          className="h-full org-btn-primary"
+                          style={{ width: `${Math.min(100, Math.round(((e.miembros?.length || 0) / Math.max(1, Math.max(...equipos.map((t) => t.miembros?.length || 0), 4))) * 100))}%` }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -784,6 +899,25 @@ export default function CompetenciasPage() {
                 <span className="text-white/80">{message.text}</span>
               </div>
             )}
+
+            <div className="mt-4 org-panel p-3 flex items-center justify-between gap-3">
+              <div className="text-xs text-white/60">
+                Centro de control del organizador
+                <span className="text-white/40"> • </span>
+                Supervisa, guía y acompaña a los equipos en su camino al éxito.
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90">
+                  Generar reporte
+                </button>
+                <button className="org-btn-secondary rounded-xl px-4 py-2 text-xs font-extrabold text-white/90">
+                  Exportar datos
+                </button>
+                <button className="org-btn-primary rounded-xl px-4 py-2 text-xs font-extrabold text-white">
+                  Anunciar evento
+                </button>
+              </div>
+            </div>
           </main>
         </div>
       </div>
