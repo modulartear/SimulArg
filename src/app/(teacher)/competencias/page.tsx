@@ -67,6 +67,12 @@ export default function CompetenciasPage() {
   }, [user])
 
   useEffect(() => {
+    if (selectedCompetencia) return
+    if (competencias.length === 0) return
+    setSelectedCompetencia(competencias[0].id)
+  }, [competencias, selectedCompetencia])
+
+  useEffect(() => {
     const loadUsuarios = async () => {
       try {
         const data = await getUsuarios()
@@ -341,115 +347,500 @@ export default function CompetenciasPage() {
     }
   }
 
+  const competenciaSeleccionada =
+    (selectedCompetencia && competencias.find((c) => c.id === selectedCompetencia)) || competencias[0] || null
+  const equiposCount = equipos.length
+  const estudiantesUnicos = new Set<string>()
+  for (const e of equipos) {
+    for (const m of e.miembros || []) estudiantesUnicos.add(m)
+  }
+  const estudiantesCount = estudiantesUnicos.size
+  const rondasTotales = competenciaSeleccionada?.total_periodos ?? 0
+  const rondaActual = competenciaSeleccionada?.periodo_actual ?? 0
+  const rondasCompletadas = Math.max(0, rondaActual - 1)
+  const sumaEfectivo = equipos.reduce((acc, e) => acc + (Number(e.efectivo) || 0), 0)
+  const sumaGanancia = equipos.reduce((acc, e) => acc + (Number(e.ganancia_acumulada) || 0), 0)
+
   return (
-    <div className="min-h-screen app-bg p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8 pt-4">
-          <div>
-            <h1 className="text-4xl font-extrabold text-white tracking-tight">Panel del Profesor</h1>
-            <p className="text-white/70 mt-1">Bienvenido, {user.email}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="btn-outline text-white px-5 py-2 rounded-xl transition-smooth font-semibold hover:bg-white/20"
-          >
-            Salir
-          </button>
-        </div>
-
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
-        {/* Competencias */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Lista de competencias */}
-          <div className="lg:col-span-1 app-surface p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Mis Competencias</h2>
-              {!showCreateForm && competencias.length > 0 && (
-                <button 
-                  onClick={() => setShowCreateForm(true)}
-                  className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
-                >
-                  + Nueva
-                </button>
-              )}
+    <div className="min-h-screen org-shell">
+      <div className="mx-auto max-w-[1320px] px-4 py-6">
+        <div className="grid grid-cols-[280px_1fr] gap-6">
+          <aside className="org-panel p-4 text-white/90">
+            <div className="flex items-center gap-3 px-3 py-3">
+              <div className="h-9 w-9 rounded-xl org-btn-primary" />
+              <div className="leading-tight">
+                <div className="text-sm font-extrabold tracking-wide">EMPRENDE</div>
+                <div className="text-xs font-semibold text-white/60">SIMULADOR EMPRESARIAL</div>
+              </div>
             </div>
 
-            {competencias.length === 0 && !showCreateForm ? (
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">No tienes competencias creadas</p>
-            <button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 text-white px-6 py-2 rounded-lg transition font-semibold"
-            >
-              + Crear Competencia
-            </button>
-          </div>
-        ) : showCreateForm ? (
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Nueva Competencia</h3>
-              <button 
-                onClick={() => setShowCreateForm(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
+            <div className="mt-4 space-y-2">
+              <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">GESTIÓN DEL TORNEO</div>
+              <button className="w-full org-btn-primary text-white rounded-xl px-3 py-2.5 text-left font-semibold shadow">
+                Vista General
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Equipos
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Estudiantes
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Rondas
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Eventos
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Noticias
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-2">
+              <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">MONITOREO</div>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Ranking en vivo
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Reportes
+              </button>
+              <button className="w-full org-btn-secondary text-white/80 rounded-xl px-3 py-2.5 text-left font-semibold">
+                Analíticas
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-2">
+              <div className="px-3 text-[10px] font-bold tracking-widest text-white/40">TEMPORADAS</div>
+              <div className="org-panel org-panel-soft p-3">
+                <div className="text-xs font-semibold text-white/60">Temporada actual</div>
+                <div className="mt-1 text-sm font-extrabold text-white">
+                  {competenciaSeleccionada?.nombre || 'Sin competencia'}
+                </div>
+                <div className="mt-1 text-xs text-white/60">
+                  {equiposCount} equipos • {estudiantesCount} estudiantes
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="flex-1 org-btn-secondary text-white rounded-xl px-3 py-2 text-sm font-semibold"
+                  >
+                    + Nueva
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 org-btn-secondary text-white rounded-xl px-3 py-2 text-sm font-semibold"
+                  >
+                    Salir
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2 max-h-[260px] overflow-y-auto pr-1 space-y-2">
+                {competencias.map((comp) => (
+                  <button
+                    key={comp.id}
+                    onClick={() => setSelectedCompetencia(comp.id)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
+                      competenciaSeleccionada?.id === comp.id ? 'org-btn-primary text-white' : 'org-btn-secondary text-white/85'
+                    }`}
+                  >
+                    <div className="text-sm font-bold truncate">{comp.nombre}</div>
+                    <div className="text-xs text-white/60">
+                      Período {comp.periodo_actual}/{comp.total_periodos} • {comp.estado}
+                    </div>
+                  </button>
+                ))}
+                {competencias.length === 0 && (
+                  <div className="text-sm text-white/60 px-3 py-4">Crea una competencia para comenzar.</div>
+                )}
+              </div>
+            </div>
+          </aside>
+
+          <main className="text-white">
+            <div className="grid grid-cols-[1.2fr_1fr_0.9fr_0.9fr_220px] gap-3 items-stretch">
+              <div className="org-panel p-4">
+                <div className="text-[10px] font-bold tracking-widest text-white/50">TEMPORADA ACTUAL</div>
+                <div className="mt-1 text-lg font-extrabold">{competenciaSeleccionada?.nombre || '—'}</div>
+                <div className="mt-1 text-xs text-white/60">
+                  {equiposCount} equipos • {estudiantesCount} estudiantes
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="text-[10px] font-bold tracking-widest text-white/50">RONDA {rondaActual || 1} EN PROGRESO</div>
+                <div className="mt-1 text-2xl font-extrabold tabular-nums">02 : 15 : 36</div>
+                <div className="mt-1 text-xs text-white/60">Días • Horas • Min • Seg</div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="text-[10px] font-bold tracking-widest text-white/50">ESTADO DE LA RONDA</div>
+                <div className="mt-2 inline-flex items-center gap-2 org-pill px-3 py-1.5 text-sm font-bold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  Abierta
+                </div>
+                <div className="mt-2 text-xs text-white/60">
+                  {competenciaSeleccionada?.estado === 'finalizada'
+                    ? 'Finalizada'
+                    : competenciaSeleccionada?.estado === 'preparacion'
+                      ? 'En preparación'
+                      : 'En curso'}
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="text-[10px] font-bold tracking-widest text-white/50">SIGUIENTE EVENTO</div>
+                <div className="mt-1 text-sm font-extrabold">Anuncio económico</div>
+                <div className="mt-1 text-xs text-white/60">En 15:30 min</div>
+              </div>
+
+              <div className="org-panel p-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-white/10 border border-white/10" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-extrabold truncate">{user.email}</div>
+                    <div className="text-xs text-white/60">Organizador</div>
+                  </div>
+                </div>
+                <button className="org-btn-secondary rounded-xl px-3 py-2 text-white/80 text-sm font-semibold">
+                  ▾
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-6 gap-3">
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Equipos</div>
+                <div className="mt-1 text-2xl font-extrabold">{equiposCount}</div>
+                <div className="text-white/50 text-xs">Todos activos</div>
+              </div>
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Estudiantes</div>
+                <div className="mt-1 text-2xl font-extrabold">{estudiantesCount}</div>
+                <div className="text-white/50 text-xs">{equiposCount > 0 ? `${Math.round(estudiantesCount / equiposCount)} por equipo` : '—'}</div>
+              </div>
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Rondas completadas</div>
+                <div className="mt-1 text-2xl font-extrabold">
+                  {rondasCompletadas} / {rondasTotales || '—'}
+                </div>
+                <div className="text-white/50 text-xs">{rondasTotales ? `${Math.round((rondasCompletadas / rondasTotales) * 100)}% del torneo` : '—'}</div>
+              </div>
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Efectivo total</div>
+                <div className="mt-1 text-2xl font-extrabold">{formatCurrency(sumaEfectivo)}</div>
+                <div className="text-white/50 text-xs">En esta ronda</div>
+              </div>
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Utilidad acumulada</div>
+                <div className="mt-1 text-2xl font-extrabold">{formatCurrency(sumaGanancia)}</div>
+                <div className="text-white/50 text-xs">Todas las rondas</div>
+              </div>
+              <div className="org-panel p-4">
+                <div className="text-white/60 text-xs font-semibold">Crecimiento mercado</div>
+                <div className="mt-1 text-2xl font-extrabold">+12.4%</div>
+                <div className="text-white/50 text-xs">vs ronda anterior</div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-[1.45fr_1fr_0.9fr] gap-3">
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">RENDIMIENTO DE EQUIPOS</div>
+                  <button
+                    onClick={() => setShowCreateTeamForm(true)}
+                    className="org-btn-secondary rounded-xl px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    + Nuevo Equipo
+                  </button>
+                </div>
+                <div className="mt-3 overflow-hidden rounded-xl border org-divider">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-white/5 text-white/70">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold">POS</th>
+                        <th className="px-3 py-2 font-semibold">EQUIPO</th>
+                        <th className="px-3 py-2 font-semibold text-right">UTILIDAD</th>
+                        <th className="px-3 py-2 font-semibold text-right">EFECTIVO</th>
+                        <th className="px-3 py-2 font-semibold text-center">ESTADO</th>
+                        <th className="px-3 py-2 font-semibold text-right">ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y org-divider">
+                      {equipos.map((equipo, idx) => (
+                        <tr key={equipo.id} className="hover:bg-white/5">
+                          <td className="px-3 py-2 text-white/70">{idx + 1}</td>
+                          <td className="px-3 py-2">
+                            <div className="font-bold">{equipo.nombre}</div>
+                            <div className="text-[10px] text-white/50">{equipo.miembros?.length || 0} miembros</div>
+                          </td>
+                          <td className="px-3 py-2 text-right font-extrabold">{formatCurrency(equipo.ganancia_acumulada)}</td>
+                          <td className="px-3 py-2 text-right font-extrabold">{formatCurrency(equipo.efectivo)}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className="org-pill px-2 py-1 text-[10px] font-bold text-white/80">
+                              {equipo.estado}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedTeamForMembers(equipo.id)
+                                setShowAddMemberModal(true)
+                              }}
+                              className="org-btn-secondary rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-white"
+                            >
+                              Gestionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {equipos.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-8 text-center text-white/60">
+                            No hay equipos en esta competencia
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 flex gap-3">
+                  {competenciaSeleccionada?.estado === 'preparacion' && (
+                    <button
+                      onClick={handleStartCompetencia}
+                      disabled={startingCompetencia}
+                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                    >
+                      {startingCompetencia ? 'Iniciando...' : 'Iniciar competencia'}
+                    </button>
+                  )}
+                  {competenciaSeleccionada?.estado === 'en_curso' && (
+                    <button
+                      onClick={handleProcessPeriodo}
+                      disabled={processingPeriodo}
+                      className="org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                    >
+                      {processingPeriodo ? 'Procesando...' : 'Procesar período'}
+                    </button>
+                  )}
+                  <div className="flex-1" />
+                  <div className="org-pill px-3 py-2 text-xs font-semibold text-white/70">
+                    Período {rondaActual}/{rondasTotales || '—'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">ACTIVIDAD EN TIEMPO REAL</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                    <div className="text-xs">
+                      <div className="font-bold">Nuevo equipo creado</div>
+                      <div className="text-[10px] text-white/60">Hace 2 min</div>
+                    </div>
+                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Equipo</div>
+                  </div>
+                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                    <div className="text-xs">
+                      <div className="font-bold">Miembro asignado a equipo</div>
+                      <div className="text-[10px] text-white/60">Hace 5 min</div>
+                    </div>
+                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Usuarios</div>
+                  </div>
+                  <div className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                    <div className="text-xs">
+                      <div className="font-bold">Ronda lista para procesar</div>
+                      <div className="text-[10px] text-white/60">Hace 9 min</div>
+                    </div>
+                    <div className="org-pill px-2 py-1 text-[10px] font-bold text-white/70">Ronda</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">NOTICIAS DEL MERCADO</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todas</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-extrabold text-emerald-300">BOOM TECNOLÓGICO</div>
+                      <div className="text-[10px] text-white/50">Evento positivo</div>
+                    </div>
+                    <div className="mt-2 text-xs text-white/70">
+                      La demanda de productos tecnológicos aumenta 20% esta ronda.
+                    </div>
+                    <div className="mt-2 text-[10px] text-white/50">1 / 3 rondas restantes</div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-extrabold text-amber-300">INFLACIÓN</div>
+                      <div className="text-[10px] text-white/50">Evento negativo</div>
+                    </div>
+                    <div className="mt-2 text-xs text-white/70">
+                      Los costos de producción aumentan 15% esta ronda.
+                    </div>
+                    <div className="mt-2 text-[10px] text-white/50">1 / 3 rondas restantes</div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-extrabold text-sky-300">NUEVO SUBSIDIO</div>
+                      <div className="text-[10px] text-white/50">Evento positivo</div>
+                    </div>
+                    <div className="mt-2 text-xs text-white/70">
+                      Incentivos a inversión en I+D esta ronda.
+                    </div>
+                    <div className="mt-2 text-[10px] text-white/50">2 / 3 rondas restantes</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-[0.9fr_1.1fr_1fr] gap-3">
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">ESTADO DE RONDAS</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver calendario</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {Array.from({ length: Math.min(6, rondasTotales || 6) }).map((_, idx) => {
+                    const ronda = idx + 1
+                    const status =
+                      ronda < rondaActual ? 'Completada' : ronda === rondaActual ? 'En curso' : 'Próxima'
+                    return (
+                      <div key={ronda} className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                        <div className="text-xs font-bold">Ronda {ronda}</div>
+                        <div className="text-[10px] text-white/60">{status}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">EVOLUCIÓN DEL MERCADO</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver analíticas</button>
+                </div>
+                <div className="mt-3 org-panel org-panel-soft p-4 h-[220px] flex items-center justify-center text-white/60 text-sm">
+                  Gráfico de evolución (próximo paso)
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Efectivo promedio</div>
+                    <div className="text-sm font-extrabold">{equiposCount ? formatCurrency(Math.round(sumaEfectivo / equiposCount)) : '—'}</div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Utilidad promedio</div>
+                    <div className="text-sm font-extrabold">{equiposCount ? formatCurrency(Math.round(sumaGanancia / equiposCount)) : '—'}</div>
+                  </div>
+                  <div className="org-panel org-panel-soft p-3">
+                    <div className="text-[10px] text-white/50 font-bold">Participación</div>
+                    <div className="text-sm font-extrabold">12.5%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="org-panel p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold tracking-wide text-white/80">EQUIPOS Y ESTUDIANTES</div>
+                  <button className="text-xs font-semibold text-white/60 hover:text-white/90">Ver todos</button>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {equipos.slice(0, 8).map((e) => (
+                    <div key={e.id} className="org-panel org-panel-soft p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-extrabold">{e.nombre}</div>
+                        <div className="text-[10px] text-white/60">{e.miembros?.length || 0} conectados</div>
+                      </div>
+                      <div className="mt-2 flex -space-x-2">
+                        {(e.miembros || []).slice(0, 4).map((m) => (
+                          <div key={m} className="h-6 w-6 rounded-full bg-white/10 border border-white/10" />
+                        ))}
+                        {(e.miembros || []).length === 0 && (
+                          <div className="text-[10px] text-white/50">Sin miembros</div>
+                        )}
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full w-[70%] org-btn-primary" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-3 w-full org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold">
+                  Enviar mensaje a todos los equipos
+                </button>
+              </div>
+            </div>
+
+            {message && (
+              <div className="mt-4 org-panel org-panel-soft p-3 text-sm">
+                <span className={message.type === 'success' ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {message.type === 'success' ? '✓ ' : '✕ '}
+                </span>
+                <span className="text-white/80">{message.text}</span>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+          <div className="org-panel p-5 w-full max-w-lg text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-extrabold">Nueva Competencia</div>
+              <button onClick={() => setShowCreateForm(false)} className="org-btn-secondary rounded-xl px-3 py-2 text-white/80 font-semibold">
                 ✕
               </button>
             </div>
-            <form onSubmit={handleCreateCompetencia} className="space-y-4">
+            <form onSubmit={handleCreateCompetencia} className="mt-4 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Competencia</label>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Nombre</label>
                 <input
                   type="text"
                   required
                   value={createFormData.nombre}
-                  onChange={(e) => setCreateFormData({...createFormData, nombre: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Simulación Empresarial 2024"
+                  onChange={(e) => setCreateFormData({ ...createFormData, nombre: e.target.value })}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  placeholder="Ej: Simulación Empresarial 2026"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Descripción</label>
                 <textarea
                   value={createFormData.descripcion}
-                  onChange={(e) => setCreateFormData({...createFormData, descripcion: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setCreateFormData({ ...createFormData, descripcion: e.target.value })}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   rows={3}
-                  placeholder="Descripción de la competencia..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total de Períodos</label>
+                  <label className="block text-xs font-semibold text-white/70 mb-1">Total de períodos</label>
                   <input
                     type="number"
                     min="1"
                     max="24"
                     required
                     value={createFormData.total_periodos}
-                    onChange={(e) => setCreateFormData({...createFormData, total_periodos: parseInt(e.target.value)})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setCreateFormData({ ...createFormData, total_periodos: parseInt(e.target.value) })}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Capital Inicial ($)</label>
+                  <label className="block text-xs font-semibold text-white/70 mb-1">Capital inicial</label>
                   <input
                     type="number"
                     min="1000"
                     step="1000"
                     required
                     value={createFormData.capital_inicial}
-                    onChange={(e) => setCreateFormData({...createFormData, capital_inicial: parseInt(e.target.value)})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setCreateFormData({ ...createFormData, capital_inicial: parseInt(e.target.value) })}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
               </div>
@@ -457,283 +848,118 @@ export default function CompetenciasPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 org-btn-secondary rounded-xl px-4 py-3 text-sm font-extrabold text-white/90"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={creatingCompetencia}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition font-semibold"
+                  className="flex-1 org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
                 >
-                  {creatingCompetencia ? 'Creando...' : 'Crear Competencia'}
+                  {creatingCompetencia ? 'Creando...' : 'Crear'}
                 </button>
               </div>
             </form>
           </div>
-        ) : (
-              <div className="space-y-2">
-                {competencias.map((comp) => (
-                  <button
-                    key={comp.id}
-                    onClick={() => setSelectedCompetencia(comp.id)}
-                    className={`w-full text-left p-4 rounded-lg transition ${
-                      selectedCompetencia === comp.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}
-                  >
-                    <p className="font-semibold">{comp.nombre}</p>
-                    <p className={`text-sm ${selectedCompetencia === comp.id ? 'text-blue-100' : 'text-gray-600'}`}>
-                      Período {comp.periodo_actual}/{comp.total_periodos}
-                    </p>
-                  </button>
-                ))}
+        </div>
+      )}
+
+      {showCreateTeamForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+          <div className="org-panel p-5 w-full max-w-lg text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-extrabold">Nuevo Equipo</div>
+              <button onClick={() => setShowCreateTeamForm(false)} className="org-btn-secondary rounded-xl px-3 py-2 text-white/80 font-semibold">
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreateTeam} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">Nombre del equipo</label>
+                <input
+                  type="text"
+                  required
+                  value={createTeamFormData.nombre}
+                  onChange={(e) => setCreateTeamFormData({ ...createTeamFormData, nombre: e.target.value })}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  placeholder="Ej: Los Emprendedores"
+                />
               </div>
-            )}
-          </div>
-
-          {/* Detalles y Equipos */}
-          <div className="lg:col-span-2 space-y-6">
-            {selectedCompetencia ? (
-              <>
-                {/* Detalles de la competencia */}
-                {competencias.find((c) => c.id === selectedCompetencia) && (
-                  <div className="app-surface p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-900">
-                          {competencias.find((c) => c.id === selectedCompetencia)?.nombre}
-                        </h3>
-                        <p className="text-gray-600 text-sm mt-1">
-                          {competencias.find((c) => c.id === selectedCompetencia)?.descripcion}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-4 py-2 rounded-full font-semibold text-sm ${
-                          competencias.find((c) => c.id === selectedCompetencia)?.estado === 'en_curso'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {competencias.find((c) => c.id === selectedCompetencia)?.estado}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <p className="text-gray-600 text-sm">Período Actual</p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {competencias.find((c) => c.id === selectedCompetencia)?.periodo_actual}/
-                          {competencias.find((c) => c.id === selectedCompetencia)?.total_periodos}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Equipos</p>
-                        <p className="text-2xl font-bold text-purple-600">{equipos.length}</p>
-                      </div>
-                    </div>
-
-                    {competencias.find((c) => c.id === selectedCompetencia)?.estado === 'preparacion' && (
-                      <button
-                        onClick={handleStartCompetencia}
-                        disabled={startingCompetencia}
-                        className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition"
-                      >
-                        {startingCompetencia ? '⏳ Iniciando...' : '🚀 Iniciar Competencia'}
-                      </button>
-                    )}
-
-                    {competencias.find((c) => c.id === selectedCompetencia)?.estado === 'en_curso' && (
-                      <button
-                        onClick={handleProcessPeriodo}
-                        disabled={processingPeriodo}
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition"
-                      >
-                        {processingPeriodo ? '⏳ Procesando período...' : '▶ Procesar Período'}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Equipos */}
-                <div className="app-surface p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">Equipos ({equipos.length})</h3>
-                    {!showCreateTeamForm && (
-                      <button 
-                        onClick={() => setShowCreateTeamForm(true)}
-                        className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
-                      >
-                        + Nuevo Equipo
-                      </button>
-                    )}
-                  </div>
-
-                  {showCreateTeamForm ? (
-                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-semibold text-gray-900">Nuevo Equipo</h4>
-                        <button 
-                          onClick={() => setShowCreateTeamForm(false)}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      <form onSubmit={handleCreateTeam} className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Equipo</label>
-                          <input
-                            type="text"
-                            required
-                            value={createTeamFormData.nombre}
-                            onChange={(e) => setCreateTeamFormData({...createTeamFormData, nombre: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ej: Los Emprendedores"
-                          />
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setShowCreateTeamForm(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={creatingTeam}
-                            className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition font-semibold"
-                          >
-                            {creatingTeam ? 'Creando...' : 'Crear Equipo'}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  ) : null}
-
-                  {loadingEquipos ? (
-                    <p className="text-gray-600">Cargando equipos...</p>
-                  ) : equipos.length === 0 ? (
-                    <p className="text-gray-600">No hay equipos en esta competencia</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {equipos.map((equipo) => (
-                        <div key={equipo.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{equipo.nombre}</h4>
-                              <div className="text-sm text-gray-600">
-                                <span>{formatCurrency(equipo.efectivo)} • {equipo.estado}</span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setSelectedTeamForMembers(equipo.id)
-                                setShowAddMemberModal(true)
-                              }}
-                              className="text-blue-500 hover:text-blue-700 text-sm font-semibold"
-                            >
-                              Gestionar Miembros
-                            </button>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Miembros ({equipo.miembros?.length || 0}:</span>
-                            <div className="mt-2 space-y-1">
-                              {equipo.miembros && equipo.miembros.map((miembroId) => {
-                                const usuario = usuarios.find((u) => u.uid === miembroId)
-                                return (
-                                  <div key={miembroId} className="flex justify-between items-center bg-white p-2 rounded">
-                                    <span>{usuario?.nombre || usuario?.email || miembroId}</span>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedTeamForMembers(equipo.id)
-                                        handleRemoveMember(miembroId)
-                                      }}
-                                      className="text-red-500 hover:text-red-700 text-xs"
-                                    >
-                                      Eliminar
-                                    </button>
-                                  </div>
-                                )
-                              })}
-                              {(!equipo.miembros || equipo.miembros.length === 0) && (
-                                <span className="text-gray-400 italic">No hay miembros en este equipo</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="app-surface p-12 text-center">
-                <p className="text-gray-600 text-lg">Selecciona una competencia para ver detalles</p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTeamForm(false)}
+                  className="flex-1 org-btn-secondary rounded-xl px-4 py-3 text-sm font-extrabold text-white/90"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingTeam}
+                  className="flex-1 org-btn-primary rounded-xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                >
+                  {creatingTeam ? 'Creando...' : 'Crear'}
+                </button>
               </div>
-            )}
+            </form>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Modal para agregar miembros */}
       {showAddMemberModal && selectedTeamForMembers && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="app-surface p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Agregar Miembro</h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+          <div className="org-panel p-5 w-full max-w-lg text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-extrabold">Agregar miembro</div>
               <button
                 onClick={() => {
                   setShowAddMemberModal(false)
                   setSelectedTeamForMembers(null)
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="org-btn-secondary rounded-xl px-3 py-2 text-white/80 font-semibold"
               >
                 ✕
               </button>
             </div>
-            
-            {loadingUsuarios ? (
-              <p className="text-gray-600">Cargando usuarios...</p>
-            ) : (
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {usuarios
-                  .filter((u) => u.rol === 'student' || !u.rol)
-                  .map((usuario) => {
-                    const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
-                    const isMember = equipo?.miembros?.includes(usuario.uid)
-                    return (
-                      <div key={usuario.uid} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium text-gray-900">{usuario.nombre || usuario.email}</p>
-                          <p className="text-sm text-gray-600">{usuario.email}</p>
+            <div className="mt-3 text-xs text-white/60">
+              Equipo: {equipos.find((e) => e.id === selectedTeamForMembers)?.nombre || '—'}
+            </div>
+            <div className="mt-4">
+              {loadingUsuarios ? (
+                <div className="text-white/70">Cargando usuarios...</div>
+              ) : (
+                <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+                  {usuarios
+                    .filter((u) => u.rol === 'student' || !u.rol)
+                    .map((usuario) => {
+                      const equipo = equipos.find((e) => e.id === selectedTeamForMembers)
+                      const isMember = equipo?.miembros?.includes(usuario.uid)
+                      return (
+                        <div key={usuario.uid} className="org-panel org-panel-soft px-3 py-2 flex items-center justify-between">
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold truncate">{usuario.nombre || usuario.email}</div>
+                            <div className="text-[10px] text-white/60 truncate">{usuario.email}</div>
+                          </div>
+                          {isMember ? (
+                            <div className="org-pill px-3 py-1 text-[10px] font-extrabold text-emerald-300">Agregado</div>
+                          ) : (
+                            <button
+                              onClick={() => handleAddMember(usuario.uid)}
+                              className="org-btn-primary rounded-lg px-3 py-2 text-[10px] font-extrabold text-white"
+                            >
+                              Agregar
+                            </button>
+                          )}
                         </div>
-                        {isMember ? (
-                          <span className="text-green-600 text-sm font-semibold">Agregado</span>
-                        ) : (
-                          <button
-                            onClick={() => handleAddMember(usuario.uid)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm font-semibold"
-                          >
-                            Agregar
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })}
-                {usuarios.filter((u) => u.rol === 'student' || !u.rol).length === 0 && (
-                  <div className="text-gray-600 text-center py-8 space-y-2">
-                    <p>No hay estudiantes visibles.</p>
-                    <p className="text-sm">
-                      Si en Firestore sí existen, revisá las reglas: el profesor debe poder leer la colección
-                      "usuarios".
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+                      )
+                    })}
+                  {usuarios.filter((u) => u.rol === 'student' || !u.rol).length === 0 && (
+                    <div className="text-white/60 text-center py-10">No hay estudiantes visibles.</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

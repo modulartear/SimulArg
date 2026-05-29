@@ -110,3 +110,42 @@ body {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
 }
+
+.org-shell {
+  background:
+    radial-gradient(900px circle at 25% 15%, rgba(120, 82, 255, 0.28) 0%, rgba(120, 82, 255, 0) 60%),
+    radial-gradient(800px circle at 80% 10%, rgba(0, 188, 212, 0.14) 0%, rgba(0, 188, 212, 0) 55%),
+    radial-gradient(900px circle at 80% 90%, rgba(67, 214, 146, 0.12) 0%, rgba(67, 214, 146, 0) 60%),
+    linear-gradient(180deg, #060914 0%, #070a16 100%);
+}
+
+.org-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+}
+
+.org-panel-soft {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.org-divider {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.org-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.org-btn-primary {
+  background: linear-gradient(135deg, rgba(120, 82, 255, 1) 0%, rgba(240, 147, 251, 1) 100%);
+}
+
+.org-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
